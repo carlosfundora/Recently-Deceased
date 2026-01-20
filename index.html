@@ -29,6 +29,7 @@
               'flicker-glow': 'flickerGlow 4s infinite',
               'ghost-pulse': 'ghostPulse 3s ease-in-out infinite',
               'scanline': 'scanline 8s linear infinite',
+              'glitch-text': 'glitch 2s infinite',
             },
             keyframes: {
               fog: {
@@ -53,6 +54,14 @@
               scanline: {
                 '0%': { transform: 'translateY(-100%)' },
                 '100%': { transform: 'translateY(100%)' },
+              },
+              glitch: {
+                '0%': { transform: 'translate(0)' },
+                '20%': { transform: 'translate(-2px, 2px)' },
+                '40%': { transform: 'translate(-2px, -2px)' },
+                '60%': { transform: 'translate(2px, 2px)' },
+                '80%': { transform: 'translate(2px, -2px)' },
+                '100%': { transform: 'translate(0)' },
               }
             }
           }
@@ -188,6 +197,7 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
     "react-icons/gi": "https://esm.sh/react-icons@5.4.0/gi?external=react",
+    "react-icons/tb": "https://esm.sh/react-icons@5.4.0/tb?external=react",
     "leaflet": "https://esm.sh/leaflet@1.9.4",
     "react-icons/": "https://esm.sh/react-icons@^5.5.0/"
   }

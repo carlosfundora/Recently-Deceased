@@ -170,8 +170,8 @@ const App: React.FC = () => {
                 <Ghost size={36} strokeWidth={1.5} className={`relative z-10 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)] ${isChatOpen ? 'text-white' : ''}`} />
               </button>
 
-              <div>
-                <h1 className="font-serif text-lg md:text-xl font-bold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-300 to-zinc-500 tracking-[0.15em] uppercase drop-shadow-[0_2px_10px_rgba(255,255,255,0.1)]">
+              <div className="flex flex-col">
+                <h1 className="font-serif text-lg md:text-xl font-bold leading-tight text-zinc-200 tracking-[0.15em] uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
                   <span className="animate-flicker-glow block">Travel Guide</span>
                 </h1>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold hidden sm:block opacity-80">
