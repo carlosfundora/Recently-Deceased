@@ -1,0 +1,170 @@
+import { Cemetery } from './types';
+
+export const INITIAL_CEMETERIES: Cemetery[] = [
+  {
+    id: 'st-louis-1',
+    name: 'St. Louis Cemetery No. 1',
+    address: '425 Basin St, New Orleans, LA 70112',
+    lat: 29.9591,
+    lng: -90.0716,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'st-louis-2',
+    name: 'St. Louis Cemetery No. 2',
+    address: '300 N Claiborne Ave, New Orleans, LA 70112',
+    lat: 29.9606,
+    lng: -90.0743,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'st-louis-3',
+    name: 'St. Louis Cemetery No. 3',
+    address: '3421 Esplanade Ave, New Orleans, LA 70119',
+    lat: 29.9818,
+    lng: -90.0886,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'lafayette-1',
+    name: 'Lafayette Cemetery No. 1',
+    address: '1400 Washington Ave, New Orleans, LA 70130',
+    lat: 29.9290,
+    lng: -90.0833,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'metairie',
+    name: 'Metairie Cemetery',
+    address: '5100 Pontchartrain Blvd, New Orleans, LA 70124',
+    lat: 29.9844,
+    lng: -90.1189,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'greenwood',
+    name: 'Greenwood Cemetery',
+    address: '5190 Canal Blvd, New Orleans, LA 70124',
+    lat: 29.9859,
+    lng: -90.1166,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'st-roch-1',
+    name: 'St. Roch Cemetery No. 1',
+    address: '1725 St Roch Ave, New Orleans, LA 70117',
+    lat: 29.9722,
+    lng: -90.0531,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'holt',
+    name: 'Holt Cemetery',
+    address: '527 City Park Ave, New Orleans, LA 70119',
+    lat: 29.9863,
+    lng: -90.1114,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'st-patrick-1',
+    name: 'St. Patrick Cemetery No. 1',
+    address: '5000 Canal St, New Orleans, LA 70119',
+    lat: 29.9806,
+    lng: -90.1105,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'cypress-grove',
+    name: 'Cypress Grove Cemetery',
+    address: '120 City Park Ave, New Orleans, LA 70124',
+    lat: 29.9850,
+    lng: -90.1158,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  // New Cemeteries
+  {
+    id: 'st-patrick-2',
+    name: 'St. Patrick Cemetery No. 2',
+    address: '5000 Canal St, New Orleans, LA 70119',
+    lat: 29.9815,
+    lng: -90.1118,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'masonic',
+    name: 'Masonic Cemetery',
+    address: '400 City Park Ave, New Orleans, LA 70119',
+    lat: 29.9835,
+    lng: -90.1135,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'st-vincent-1',
+    name: 'St. Vincent de Paul Cemetery No. 1',
+    address: '1950 Soniat St, New Orleans, LA 70115',
+    lat: 29.9408,
+    lng: -90.1106,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'odd-fellows',
+    name: 'Odd Fellows Rest',
+    address: '5055 Canal St, New Orleans, LA 70119',
+    lat: 29.9822,
+    lng: -90.1126,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  },
+  {
+    id: 'charity-hospital',
+    name: 'Charity Hospital Cemetery',
+    address: '5050 Canal St, New Orleans, LA 70119',
+    lat: 29.9810,
+    lng: -90.1120,
+    visited: false,
+    history: '',
+    userNotes: '',
+    photos: []
+  }
+];
