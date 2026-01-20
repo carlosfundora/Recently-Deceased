@@ -83,8 +83,8 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
       className={`
         relative overflow-hidden transition-all duration-700 ease-in-out border group
         ${cemetery.visited 
-          ? 'bg-black border-zinc-600 shadow-[var(--ghost-glow-active)]' 
-          : 'bg-[#050505] border-zinc-900 hover:border-zinc-700 hover:shadow-[var(--ghost-glow)]'
+          ? 'bg-black border-zinc-500 shadow-[var(--ghost-glow-active)]' 
+          : 'bg-[#050505] border-zinc-800 hover:border-zinc-600 hover:shadow-[var(--ghost-glow)]'
         }
       `}
       style={{
@@ -92,9 +92,9 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
       }}
     >
       {/* Top Status Bar - Subtle Gradient */}
-      <div className={`absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent ${cemetery.visited ? 'via-white/40 animate-flicker-glow' : 'via-zinc-700'} to-transparent opacity-50`}></div>
+      <div className={`absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent ${cemetery.visited ? 'via-white/60 animate-flicker-glow' : 'via-zinc-600'} to-transparent opacity-70`}></div>
       
-      {/* Animated Mist/Fog Overlay on Hover - Made Brighter */}
+      {/* Animated Mist/Fog Overlay on Hover */}
       <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000 z-0">
          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-zinc-800/60 to-transparent animate-mist-rise mix-blend-screen"></div>
          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08),transparent_70%)] mix-blend-overlay"></div>
@@ -111,16 +111,16 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
       <div className="p-[var(--space-md)] relative z-10">
         <div className="flex justify-between items-start gap-4 mb-[var(--space-sm)]">
           <div>
-            <h3 className={`font-serif text-xl md:text-2xl font-bold mb-1 tracking-wide transition-colors ${cemetery.visited ? 'text-zinc-100 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)] animate-ghost-pulse' : 'text-zinc-300 group-hover:text-white'}`}>
+            <h3 className={`font-serif text-xl md:text-2xl font-bold mb-1 tracking-wide transition-colors ${cemetery.visited ? 'text-zinc-100 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)] animate-ghost-pulse' : 'text-zinc-200 group-hover:text-white'}`}>
               {cemetery.name}
             </h3>
             <div className="flex flex-col gap-1">
-              <div className="flex items-center text-zinc-400 text-xs uppercase tracking-widest font-medium group-hover:text-zinc-300 transition-colors">
-                <MapPin size={12} className="mr-1.5 opacity-70" />
+              <div className="flex items-center text-zinc-300 text-xs uppercase tracking-widest font-medium group-hover:text-zinc-200 transition-colors">
+                <MapPin size={12} className="mr-1.5 opacity-80" />
                 <span>{cemetery.address}</span>
               </div>
               {cemetery.visited && cemetery.visitedDate && (
-                <div className="flex items-center text-zinc-300 text-xs mt-1 font-mono tracking-wide opacity-80">
+                <div className="flex items-center text-zinc-200 text-xs mt-1 font-mono tracking-wide opacity-90">
                   <Calendar size={12} className="mr-1.5" />
                   <span>Visited: {new Date(cemetery.visitedDate).toLocaleDateString()}</span>
                 </div>
@@ -133,8 +133,8 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
             className={`
               flex items-center justify-center w-8 h-8 md:w-10 md:h-10 border transition-all duration-500
               ${cemetery.visited 
-                ? 'bg-zinc-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:bg-white hover:scale-105' 
-                : 'bg-transparent border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 group-hover:border-zinc-600'}
+                ? 'bg-zinc-300 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:bg-white hover:scale-105' 
+                : 'bg-transparent border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 group-hover:border-zinc-500'}
             `}
             style={{ borderRadius: '2px' }}
             title={cemetery.visited ? "Mark as unvisited" : "Mark as visited"}
@@ -144,16 +144,16 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
         </div>
 
         {/* History Section */}
-        <div className="mb-[var(--space-sm)] pb-[var(--space-sm)] border-b border-zinc-900/50">
+        <div className="mb-[var(--space-sm)] pb-[var(--space-sm)] border-b border-zinc-800">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-zinc-400 transition-colors">
+            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-zinc-300 transition-colors">
               <BookOpen size={12} /> History
             </h4>
             {!cemetery.history && (
               <button
                 onClick={handleSummonHistory}
                 disabled={loadingHistory}
-                className="text-[10px] font-bold uppercase tracking-[0.15em] flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors disabled:opacity-30 border border-zinc-800 px-3 py-1.5 hover:border-zinc-600 bg-zinc-900/30 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] group-hover:border-zinc-700"
+                className="text-[10px] font-bold uppercase tracking-[0.15em] flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors disabled:opacity-30 border border-zinc-700 px-3 py-1.5 hover:border-zinc-500 bg-zinc-900/50 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] group-hover:border-zinc-600"
               >
                 {loadingHistory ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} className={cemetery.history ? '' : 'animate-pulse'} />}
                 {loadingHistory ? 'Communing...' : 'Summon Info'}
@@ -161,11 +161,11 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
             )}
           </div>
           
-          <div className="text-sm text-zinc-300 leading-relaxed font-light font-sans">
+          <div className="text-sm text-zinc-200 leading-relaxed font-light font-sans">
             {cemetery.history ? (
-              <p className="animate-in fade-in duration-1000 border-l border-zinc-700 pl-4 italic opacity-95">{cemetery.history}</p>
+              <p className="animate-in fade-in duration-1000 border-l border-zinc-600 pl-4 italic opacity-100">{cemetery.history}</p>
             ) : (
-              <p className="italic opacity-40 text-xs transition-opacity duration-500 group-hover:opacity-60 text-zinc-400">The past remains buried...</p>
+              <p className="italic opacity-50 text-xs transition-opacity duration-500 group-hover:opacity-70 text-zinc-300">The past remains buried...</p>
             )}
           </div>
         </div>
@@ -173,14 +173,14 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
         {/* User Notes */}
         <div className="mb-[var(--space-sm)]">
           <div className="flex items-center justify-between mb-3">
-             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-zinc-400 transition-colors">
+             <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-zinc-300 transition-colors">
                <Edit3 size={12} /> Notes
              </h4>
           </div>
           {isEditingNotes ? (
             <div className="relative animate-in fade-in zoom-in-95 duration-200">
               <textarea
-                className="w-full bg-[#0a0a0a] border border-zinc-700 p-3 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500 focus:shadow-[0_0_15px_rgba(255,255,255,0.05)] resize-y min-h-[80px] font-mono tracking-tight"
+                className="w-full bg-[#0a0a0a] border border-zinc-600 p-3 text-xs text-zinc-100 focus:outline-none focus:border-zinc-400 focus:shadow-[0_0_15px_rgba(255,255,255,0.05)] resize-y min-h-[80px] font-mono tracking-tight"
                 value={noteDraft}
                 onChange={(e) => setNoteDraft(e.target.value)}
                 placeholder="Record your observations..."
@@ -189,13 +189,13 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
               <div className="flex justify-end gap-2 mt-2">
                 <button 
                    onClick={handleCancelNotes}
-                   className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1"
+                   className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 hover:text-zinc-200 transition-colors px-3 py-1"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleSaveNotes}
-                  className="flex items-center gap-1.5 bg-zinc-100 text-black px-3 py-1 text-[10px] uppercase font-bold tracking-widest hover:bg-white hover:shadow-[0_0_10px_rgba(255,255,255,0.4)] transition-all"
+                  className="flex items-center gap-1.5 bg-zinc-300 text-black px-3 py-1 text-[10px] uppercase font-bold tracking-widest hover:bg-white hover:shadow-[0_0_10px_rgba(255,255,255,0.4)] transition-all"
                 >
                   <Save size={12} />
                   Save Notes
@@ -205,7 +205,7 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
           ) : (
             <div 
               onClick={() => setIsEditingNotes(true)}
-              className="w-full min-h-[2.5rem] p-3 border border-dashed border-zinc-800 text-xs text-zinc-500 cursor-pointer hover:border-zinc-600 hover:text-zinc-300 transition-colors font-mono hover:bg-zinc-900/40 bg-black/40"
+              className="w-full min-h-[2.5rem] p-3 border border-dashed border-zinc-700 text-xs text-zinc-300 cursor-pointer hover:border-zinc-500 hover:text-zinc-100 transition-colors font-mono hover:bg-zinc-900/40 bg-black/40"
             >
               {cemetery.userNotes || "Click to record observations..."}
             </div>
@@ -215,12 +215,12 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
         {/* Photos Section */}
         <div>
           <div className="flex items-center justify-between mb-3">
-             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-zinc-400 transition-colors">
+             <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-zinc-300 transition-colors">
                <Camera size={12} /> Evidence
              </h4>
              <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[10px] font-bold uppercase tracking-[0.15em] border border-zinc-800 hover:border-zinc-600 text-zinc-500 hover:text-zinc-200 px-3 py-1.5 transition-colors bg-zinc-900/20 group-hover:border-zinc-700"
+                className="text-[10px] font-bold uppercase tracking-[0.15em] border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-zinc-100 px-3 py-1.5 transition-colors bg-zinc-900/30 group-hover:border-zinc-600"
              >
                + Upload
              </button>
@@ -250,7 +250,7 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
               ))}
             </div>
           ) : (
-            <div className="text-[10px] text-zinc-700 italic text-center py-3 border border-zinc-900/50 bg-[#050505] opacity-60">
+            <div className="text-[10px] text-zinc-500 italic text-center py-3 border border-zinc-900/50 bg-[#050505] opacity-60">
               No evidence found.
             </div>
           )}

@@ -4,37 +4,11 @@ import { INITIAL_CEMETERIES } from './constants';
 import { CemeteryCard } from './components/CemeteryCard';
 import { CemeteryMap } from './components/CemeteryMap';
 import { CemeteryOfTheDay } from './components/CemeteryOfTheDay';
-import { Ghost, Info, Map as MapIcon, List, X, SortAsc, CalendarClock } from 'lucide-react';
+import { SoulTracker } from './components/SoulTracker';
+import { GhostChat } from './components/GhostChat';
+import { Ghost, Map as MapIcon, List, SortAsc, CalendarClock, Search, MapPin, X } from 'lucide-react';
 
 const STORAGE_KEY = 'nola_cemetery_passport_v2';
-
-// Custom Above-Ground Tomb Icon
-const TombIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="1.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    {/* Base/Steps */}
-    <path d="M2 21h20" />
-    <path d="M4 21v-2h16v2" />
-    
-    {/* Main Structure */}
-    <path d="M6 19V8l6-5 6 5v11" />
-    <path d="M6 8h12" />
-    
-    {/* Door/Plaque */}
-    <rect x="9" y="12" width="6" height="7" rx="1" />
-    
-    {/* Cross/Decoration on top */}
-    <path d="M12 3v2" />
-    <path d="M11 4h2" />
-  </svg>
-);
 
 const App: React.FC = () => {
   const [cemeteries, setCemeteries] = useState<Cemetery[]>([]);
@@ -42,7 +16,9 @@ const App: React.FC = () => {
   const [view, setView] = useState<'list' | 'map'>('list');
   const [filter, setFilter] = useState<'all' | 'visited' | 'pending'>('all');
   const [sortType, setSortType] = useState<'name' | 'date'>('name');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCemeteryId, setSelectedCemeteryId] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Header spotlight refs
   const headerRef = useRef<HTMLDivElement>(null);
@@ -52,17 +28,15 @@ const App: React.FC = () => {
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
-        // Robust merge to ensure history and notes persist while keeping code/constants up to date
         const merged = INITIAL_CEMETERIES.map(init => {
             const saved = parsed.find((p: Cemetery) => p.id === init.id);
-            // If saved exists, prioritize its data for user-editable fields
             return saved ? { 
               ...init, 
               visited: saved.visited,
               visitedDate: saved.visitedDate,
-              history: saved.history || init.history, // Persist history if it exists
+              history: saved.history || init.history,
               userNotes: saved.userNotes || init.userNotes,
-              dailyFacts: saved.dailyFacts, // Persist cached facts
+              dailyFacts: saved.dailyFacts,
               photos: saved.photos || [] 
             } : init;
         });
@@ -115,12 +89,18 @@ const App: React.FC = () => {
   }, [cemeteries]);
 
   const visitedCount = cemeteries.filter(c => c.visited).length;
-  const progressPercentage = Math.round((visitedCount / cemeteries.length) * 100);
 
   const processedCemeteries = useMemo(() => {
     let result = cemeteries.filter(c => {
-      if (filter === 'visited') return c.visited;
-      if (filter === 'pending') return !c.visited;
+      // Filter by status
+      if (filter === 'visited' && !c.visited) return false;
+      if (filter === 'pending' && c.visited) return false;
+      
+      // Filter by search
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return c.name.toLowerCase().includes(query) || c.address.toLowerCase().includes(query);
+      }
       return true;
     });
 
@@ -138,7 +118,7 @@ const App: React.FC = () => {
         return a.name.localeCompare(b.name);
       }
     });
-  }, [cemeteries, filter, sortType]);
+  }, [cemeteries, filter, sortType, searchQuery]);
 
   if (!isLoaded) {
     return (
@@ -152,13 +132,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-zinc-300 font-sans selection:bg-white selection:text-black pb-24 relative">
-      {/* Sticky Header with Ghostly Spotlight */}
+      {/* Sticky Header */}
       <header 
         ref={headerRef}
         onMouseMove={handleHeaderMouseMove}
         className="sticky top-0 z-40 bg-[#050505] border-b border-zinc-900 transition-all duration-300 group relative overflow-hidden"
       >
-        {/* Spotlight Overlay */}
         <div 
           className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{
@@ -166,66 +145,36 @@ const App: React.FC = () => {
           }}
         />
 
-        <div className="w-full mx-auto relative z-10" style={{ maxWidth: 'var(--container-max-width)', padding: 'var(--space-md)' }}>
-          <div className="flex items-center justify-between mb-4">
+        <div className="w-full mx-auto relative z-10 flex items-center justify-between" style={{ maxWidth: 'var(--container-max-width)', padding: '0.75rem var(--space-md)' }}>
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-zinc-950 text-white rounded-[2px] border border-zinc-700 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
-                <TombIcon className="w-7 h-7" />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="font-serif text-xl md:text-2xl font-bold leading-tight text-white tracking-[0.15em] uppercase drop-shadow-md">
+              <button 
+                 onClick={() => setIsChatOpen(!isChatOpen)}
+                 className="p-2 bg-zinc-950 text-white rounded-[2px] border border-zinc-700 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:bg-zinc-800 hover:border-zinc-500 transition-all hover:scale-105"
+                 title="Commune with the guide"
+              >
+                <Ghost className="w-6 h-6" />
+              </button>
+              <div>
+                <h1 className="font-serif text-lg md:text-xl font-bold leading-tight text-white tracking-[0.15em] uppercase drop-shadow-md">
                   Travel Guide
                 </h1>
-                <p className="text-xs text-zinc-400 uppercase tracking-[0.3em] font-bold">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold hidden sm:block">
                   For the Recently Deceased
                 </p>
               </div>
-              {/* Mobile Only Title */}
-              <div className="sm:hidden">
-                 <h1 className="font-serif text-lg font-bold text-white tracking-widest uppercase">Travel Guide</h1>
-              </div>
             </div>
-            
-            {/* View Toggle */}
-            <div className="flex bg-zinc-950 rounded-[2px] p-1 border border-zinc-800">
-              <button
-                onClick={() => setView('list')}
-                className={`flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-widest transition-all ${view === 'list' ? 'bg-zinc-200 text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                <List size={14} />
-                <span className="hidden sm:inline">List</span>
-              </button>
-              <button
-                onClick={() => setView('map')}
-                className={`flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-widest transition-all ${view === 'map' ? 'bg-zinc-200 text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                <MapIcon size={14} />
-                <span className="hidden sm:inline">Map</span>
-              </button>
-            </div>
-          </div>
-          
-          {/* Stats Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
-              <span>Soul Collection</span>
-              <span className="text-zinc-300">{visitedCount} / {cemeteries.length}</span>
-            </div>
-            <div className="h-[2px] bg-zinc-900 overflow-hidden w-full">
-              <div 
-                className="h-full bg-zinc-200 transition-all duration-1000 ease-out"
-                style={{ width: `${progressPercentage}%`, boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)' }}
-              ></div>
-            </div>
-          </div>
+            {/* Empty right side to balance layout if needed, or minimalistic */}
         </div>
       </header>
 
       <main className="w-full mx-auto relative z-0 bg-black" style={{ maxWidth: 'var(--container-max-width)', padding: 'var(--space-md)' }}>
         
+        {/* Soul Collection Section */}
+        <SoulTracker total={cemeteries.length} visited={visitedCount} />
+
         {view === 'list' && (
           <>
-            {/* Cemetery of the Day Section */}
+            {/* Cemetery of the Day */}
             {cemeteryOfTheDay && (
               <CemeteryOfTheDay 
                 cemetery={cemeteryOfTheDay} 
@@ -234,45 +183,72 @@ const App: React.FC = () => {
               />
             )}
 
-            {/* Filters and Sort */}
-            <div 
-              className="flex flex-col md:flex-row gap-[var(--space-md)] mb-[var(--space-lg)] justify-between items-start md:items-center bg-black/50 p-[var(--space-sm)] border-y border-zinc-900"
-            >
-              <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 scrollbar-hide">
-                 <button 
-                   onClick={() => setFilter('all')}
-                   className={`px-5 py-2 text-xs uppercase font-bold tracking-[0.2em] transition-colors border whitespace-nowrap ${filter === 'all' ? 'bg-zinc-100 text-black border-zinc-100' : 'border-zinc-900 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'}`}
-                 >
-                   All
-                 </button>
-                 <button 
-                   onClick={() => setFilter('visited')}
-                   className={`px-5 py-2 text-xs uppercase font-bold tracking-[0.2em] transition-colors border whitespace-nowrap ${filter === 'visited' ? 'bg-zinc-100 text-black border-zinc-100' : 'border-zinc-900 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'}`}
-                 >
-                   Visited
-                 </button>
-                 <button 
-                   onClick={() => setFilter('pending')}
-                   className={`px-5 py-2 text-xs uppercase font-bold tracking-[0.2em] transition-colors border whitespace-nowrap ${filter === 'pending' ? 'bg-zinc-100 text-black border-zinc-100' : 'border-zinc-900 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'}`}
-                 >
-                   Pending
-                 </button>
+            {/* Toolbar */}
+            <div className="mb-[var(--space-lg)] p-[var(--space-sm)] bg-[#050505] border border-zinc-800 flex flex-col lg:flex-row gap-4 items-center justify-between shadow-[var(--ghost-glow)]" style={{ borderRadius: 'var(--card-radius)' }}>
+              
+              {/* Filter Buttons */}
+              <div className="flex gap-2 w-full lg:w-auto justify-center lg:justify-start">
+                 {(['all', 'visited', 'pending'] as const).map((f) => (
+                   <button 
+                     key={f}
+                     onClick={() => setFilter(f)}
+                     className={`px-4 py-2 text-[10px] uppercase font-bold tracking-[0.2em] transition-colors border ${filter === f ? 'bg-[#d4d4d8] text-black border-zinc-300' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'}`}
+                   >
+                     {f}
+                   </button>
+                 ))}
               </div>
 
-              <div className="relative w-full md:w-auto min-w-[220px]">
-                <select
-                  value={sortType}
-                  onChange={(e) => setSortType(e.target.value as 'name' | 'date')}
-                  className="w-full md:w-auto appearance-none bg-black border border-zinc-800 text-zinc-300 text-xs font-bold uppercase tracking-wider pl-9 pr-8 py-2.5 focus:outline-none focus:border-zinc-500 cursor-pointer hover:bg-zinc-900 transition-colors"
-                  style={{ borderRadius: '0' }}
-                >
-                  <option value="name">Sort: Name (A-Z)</option>
-                  <option value="date">Sort: Visited</option>
-                </select>
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
-                  {sortType === 'name' ? <SortAsc size={16} /> : <CalendarClock size={16} />}
-                </div>
+              {/* Center Controls: Sort | Search | View */}
+              <div className="flex flex-1 w-full gap-0 border border-zinc-800 bg-black items-center">
+                  {/* Sort Dropdown */}
+                  <div className="relative border-r border-zinc-800 min-w-[40px] md:min-w-[140px]">
+                    <select
+                      value={sortType}
+                      onChange={(e) => setSortType(e.target.value as 'name' | 'date')}
+                      className="w-full appearance-none bg-black text-zinc-400 text-[10px] font-bold uppercase tracking-wider pl-9 pr-4 py-3 focus:outline-none cursor-pointer hover:bg-zinc-900 transition-colors h-full"
+                    >
+                      <option value="name">Name</option>
+                      <option value="date">Date</option>
+                    </select>
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none">
+                      {sortType === 'name' ? <SortAsc size={14} /> : <CalendarClock size={14} />}
+                    </div>
+                  </div>
+
+                  {/* Search Bar - Flex 1 to take space */}
+                  <div className="flex-1 relative border-r border-zinc-800">
+                     <input 
+                       type="text"
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
+                       placeholder="SEARCH..."
+                       className="w-full bg-black text-zinc-200 text-[10px] font-mono p-3 pl-9 focus:outline-none placeholder-zinc-700 uppercase tracking-widest"
+                     />
+                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none">
+                       <Search size={14} />
+                     </div>
+                  </div>
+
+                  {/* View Toggle (Pin Button) */}
+                  <div className="flex">
+                    <button
+                      onClick={() => setView('list')}
+                      className={`p-3 transition-colors ${view === 'list' ? 'text-zinc-200 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400'}`}
+                      title="List View"
+                    >
+                      <List size={16} />
+                    </button>
+                    <button
+                      onClick={() => setView('map')}
+                      className={`p-3 transition-colors ${view === 'map' ? 'text-zinc-200 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400'}`}
+                      title="Map View"
+                    >
+                      <MapIcon size={16} /> 
+                    </button>
+                  </div>
               </div>
+
             </div>
 
             {/* Grid */}
@@ -291,7 +267,7 @@ const App: React.FC = () => {
               ) : (
                 <div className="col-span-full py-20 text-center text-zinc-700 bg-zinc-950/30 border border-zinc-900 border-dashed">
                   <Ghost className="w-16 h-16 mx-auto mb-4 opacity-10" />
-                  <p className="text-lg font-serif">No spirits found.</p>
+                  <p className="text-lg font-serif">No spirits found matching your inquiry.</p>
                 </div>
               )}
             </div>
@@ -300,11 +276,14 @@ const App: React.FC = () => {
 
         {view === 'map' && (
           <div className="animate-in fade-in zoom-in-95 duration-500">
-             <div className="mb-[var(--space-sm)] p-[var(--space-sm)] border border-zinc-900 bg-black text-xs font-mono text-zinc-400 flex items-center gap-3">
-                <div className="p-1.5 bg-zinc-200 text-black rounded-full">
-                  <Info size={12} />
-                </div>
-                <span className="uppercase tracking-wide">Displaying {processedCemeteries.length} locations. Select a marker to proceed.</span>
+             <div className="mb-4 flex justify-between items-center">
+               <button 
+                  onClick={() => setView('list')} 
+                  className="flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
+               >
+                 &larr; Back to List
+               </button>
+               <div className="text-[10px] font-mono text-zinc-500 uppercase">{processedCemeteries.length} Locations Found</div>
              </div>
              <CemeteryMap 
                cemeteries={processedCemeteries} 
@@ -312,18 +291,6 @@ const App: React.FC = () => {
              />
           </div>
         )}
-
-        {/* Footer Info */}
-        <div className="mt-[var(--space-xl)] p-[var(--space-lg)] bg-black border-t border-zinc-900 text-center">
-            <div className="flex items-center justify-center gap-2 text-zinc-500 mb-3">
-                <Info size={14} />
-                <span className="text-xs font-bold uppercase tracking-[0.2em]">Travel Advisory</span>
-            </div>
-            <p className="text-xs text-zinc-600 max-w-lg mx-auto leading-relaxed font-mono">
-                Some cemeteries require guided tours for entry. 
-                Respect the resting places. Data is local.
-            </p>
-        </div>
       </main>
 
       {/* Detail Modal Overlay */}
@@ -352,6 +319,9 @@ const App: React.FC = () => {
           <div className="absolute inset-0 -z-10 cursor-pointer" onClick={() => setSelectedCemeteryId(null)}></div>
         </div>
       )}
+
+      {/* Ghost Chat Widget */}
+      <GhostChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 };

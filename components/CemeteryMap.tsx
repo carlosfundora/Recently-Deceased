@@ -24,6 +24,11 @@ export const CemeteryMap: React.FC<CemeteryMapProps> = ({ cemeteries, onSelectCe
       maxZoom: 20
     }).addTo(mapInstance.current);
 
+    // Force map resize calculation after a short delay to handle animation transitions
+    setTimeout(() => {
+      mapInstance.current?.invalidateSize();
+    }, 100);
+
     return () => {
       mapInstance.current?.remove();
       mapInstance.current = null;
@@ -42,9 +47,18 @@ export const CemeteryMap: React.FC<CemeteryMapProps> = ({ cemeteries, onSelectCe
     });
 
     // Custom "Ghostly" Marker Icon
+    // Using a simpler icon structure that doesn't rely on complex external CSS classes
     const customIcon = L.divIcon({
-      className: 'custom-div-icon',
-      html: `<div style="color: #e4e4e7; filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));">
+      className: '', // Intentionally empty to avoid default styles
+      html: `<div style="
+        width: 32px; 
+        height: 32px; 
+        color: #e4e4e7; 
+        filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        ">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="#000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
                 <circle cx="12" cy="9" r="2.5" fill="#000"/>
@@ -99,9 +113,10 @@ export const CemeteryMap: React.FC<CemeteryMapProps> = ({ cemeteries, onSelectCe
   }, [cemeteries, onSelectCemetery]);
 
   return (
-    <div className="w-full h-[600px] border border-zinc-800 relative group overflow-hidden" style={{ borderRadius: 'var(--card-radius)' }}>
-       <div ref={mapContainer} className="w-full h-full bg-black" />
-       <div className="absolute inset-0 border-[1px] border-white/10 pointer-events-none z-[1000]"></div>
+    <div className="w-full h-[600px] border border-zinc-800 relative group overflow-hidden bg-black" style={{ borderRadius: 'var(--card-radius)' }}>
+       <div ref={mapContainer} className="w-full h-full z-10 relative" />
+       {/* Overlay vignette */}
+       <div className="absolute inset-0 border-[1px] border-white/10 pointer-events-none z-20 shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]"></div>
     </div>
   );
 };

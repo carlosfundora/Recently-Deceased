@@ -1,5 +1,7 @@
 {
   "name": "Travel Guide for the Recently Deceased",
   "description": "A dark-themed passport app for tracking visits to New Orleans cemeteries, featuring photo uploads and AI-generated historical insights.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }
