@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Activity, Zap, Radio, Mic, Battery, LayoutGrid, BarChart3, Camera, Image as ImageIcon, Video, Disc, Thermometer, Gauge, Fingerprint, Droplets, Sun, AlertTriangle } from 'lucide-react';
+import { X, Activity, Zap, Radio, Mic, Battery, LayoutGrid, BarChart3, Camera, Image as ImageIcon, Video, Disc, Thermometer, Gauge, Fingerprint, Sun, AlertTriangle } from 'lucide-react';
 import { TbAntenna } from "react-icons/tb";
 
 interface GhostMeterProps {
@@ -10,8 +10,15 @@ interface GhostMeterProps {
 const GHOST_WORDS = [
   "BELOW", "COLD", "WAIT", "HELP", "RUN", "HIDE", "LOOK", "BURIED", "ASH", "BONE", 
   "DARK", "LEAVE", "NOW", "HERE", "GONE", "LOST", "SINK", "RISE", "FALL", "SEEK",
-  "MOTHER", "FATHER", "SIN", "PRAY", "WATCH", "CLOSE", "BEHIND", "DOOR"
+  "MOTHER", "FATHER", "SIN", "PRAY", "WATCH", "CLOSE", "BEHIND", "DOOR", "USHERS",
+  "SILENCE", "WEEP", "ROT", "BELOW", "UNDER", "EARTH", "STONE", "NAME", "FORGOT"
 ];
+
+interface SpiritWord {
+  id: number;
+  text: string;
+  xOffset: number;
+}
 
 type ViewMode = 'dashboard' | 'spectral' | 'visual' | 'rf';
 
@@ -44,8 +51,7 @@ export const GhostMeter: React.FC<GhostMeterProps> = ({ isOpen, onClose }) => {
   useEffect(() => { sensorsRef.current = sensors; }, [sensors]);
 
   // Ghost Box State
-  const [activeWord, setActiveWord] = useState<string>("");
-  const [history, setHistory] = useState<string[]>([]);
+  const [spiritWords, setSpiritWords] = useState<SpiritWord[]>([]);
   
   // Data History
   const [batteryHistory, setBatteryHistory] = useState<number[]>(new Array(20).fill(100));
@@ -246,9 +252,9 @@ export const GhostMeter: React.FC<GhostMeterProps> = ({ isOpen, onClose }) => {
                  const baseDrain = 0.01;
                  const flux = (Math.random() - 0.4) * 0.05 * sensorStress;
                  const newDrain = Math.max(0, baseDrain + flux);
-                 const newHistory = [...batteryHistory.slice(1), prev.battery - (newDrain * 10)]; // This relies on closure batteryHistory if not careful? No, we use functional update here which is safe, BUT setBatteryHistory is external.
-                 // Actually we can't easily access previous state inside the loop if we want to update state unless we use the setter.
-                 // But for `setBatteryHistory`, we need the previous value.
+                 const newHistory = [...batteryHistory.slice(1), prev.battery - (newDrain * 10)];
+                 
+                 // Using functional update correctly
                  setBatteryHistory(prevHist => [...prevHist.slice(1), prev.battery - (newDrain * 10)]);
                  return { ...prev, drainRate: newDrain * 100 };
              });
@@ -371,25 +377,37 @@ export const GhostMeter: React.FC<GhostMeterProps> = ({ isOpen, onClose }) => {
 
      animationRef.current = requestAnimationFrame(updateLoop);
      return () => cancelAnimationFrame(animationRef.current);
-  }, [isOpen, calibrated, viewMode]); // Reduced dependencies to prevent loop reset
+  }, [isOpen, calibrated, viewMode]);
 
   // Word Generation
   useEffect(() => {
     if (!isOpen || !calibrated || viewMode === 'visual') return;
+    
+    // Check interval less frequently to let words linger, but not too slow
     const interval = setInterval(() => {
-      const motionTotal = Math.abs(sensors.x) + Math.abs(sensors.y) + Math.abs(sensors.z);
-      const audioScore = sensors.audio; 
+      // Access current sensors via ref to prevent stale closures or constant resets
+      const currentSensors = sensorsRef.current;
+      const motionTotal = Math.abs(currentSensors.x) + Math.abs(currentSensors.y) + Math.abs(currentSensors.z);
+      const audioScore = currentSensors.audio; 
       const thresholdScore = (motionTotal * 2) + (audioScore * 0.5); 
       
-      if (thresholdScore > 40 || Math.random() > 0.95) {
-         const word = GHOST_WORDS[Math.floor(Math.random() * GHOST_WORDS.length)];
-         setActiveWord(word);
-         setHistory(prev => [word, ...prev].slice(0, 5));
+      // Random chance increased slightly for effect
+      if (thresholdScore > 40 || Math.random() > 0.85) {
+         const text = GHOST_WORDS[Math.floor(Math.random() * GHOST_WORDS.length)];
+         
+         const newWord: SpiritWord = {
+             id: Date.now() + Math.random(), // Ensure uniqueness
+             text,
+             xOffset: (Math.random() - 0.5) * 100 // +/- 50px spread
+         };
+
+         setSpiritWords(prev => [newWord, ...prev].slice(0, 6)); // Keep only 6 words
+         
          if (navigator.vibrate) navigator.vibrate(200);
-      } else if (Math.random() < 0.1) { setActiveWord(""); }
-    }, 2000);
+      }
+    }, 2500);
     return () => clearInterval(interval);
-  }, [isOpen, calibrated, sensors, viewMode]);
+  }, [isOpen, calibrated, viewMode]);
 
   if (!isOpen) return null;
 
@@ -672,29 +690,58 @@ export const GhostMeter: React.FC<GhostMeterProps> = ({ isOpen, onClose }) => {
                 )}
 
                 {/* Footer Controls Container */}
-                <div className="flex-none bg-zinc-950 border-t border-zinc-800 relative z-30 h-32 overflow-hidden">
+                <div className="flex-none bg-zinc-950 border-t border-zinc-800 relative z-30 h-36 overflow-hidden">
                     
+                    {/* Fog Background Layer */}
+                    <div className="absolute inset-0 z-0 opacity-40 pointer-events-none select-none overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-zinc-800/20 to-transparent w-[200%] animate-fog-flow"></div>
+                        <div className="absolute -inset-[50%] bg-[radial-gradient(circle,rgba(255,255,255,0.05)_0%,transparent_60%)] animate-[spin_30s_linear_infinite_reverse] blur-2xl"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60"></div>
+                    </div>
+
                     {/* Spirit Box Layer (Static z-10) */}
-                    <div className={`absolute inset-0 p-6 flex flex-col items-center justify-center transition-all duration-500 z-10 ${viewMode === 'visual' ? 'opacity-20 blur-sm scale-95' : 'opacity-100 scale-100'}`}>
-                        <div className="absolute top-2 left-3 flex items-center gap-2 text-[10px] font-mono text-zinc-600">
+                    <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 z-10 ${viewMode === 'visual' ? 'opacity-20 blur-sm scale-95 pointer-events-none' : 'opacity-100'}`}>
+                        <div className="absolute top-2 left-3 flex items-center gap-2 text-[10px] font-mono text-zinc-600 z-20">
                             <Radio size={12} className="animate-ping" />
-                            <span>SPIRIT_BOX_SCANNING...</span>
+                            <span>SCANNING_ETHER...</span>
                         </div>
                         
-                        {/* Animated Ghost Word */}
-                        <div 
-                            key={activeWord}
-                            className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-t from-zinc-500 to-white tracking-widest font-serif min-h-[3rem] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)] animate-in zoom-in-50 fade-in duration-300 slide-in-from-bottom-2 text-center"
-                        >
-                            {activeWord}
-                        </div>
-                        
-                        <div className="mt-2 h-8 flex gap-2 overflow-hidden opacity-50 justify-center">
-                            {history.map((word, i) => (
-                                <span key={i} className="text-[10px] text-zinc-600 font-mono border border-zinc-800 px-2 py-1 h-fit">
-                                    {word}
-                                </span>
-                            ))}
+                        {/* Drifting Words Container */}
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            {spiritWords.map((word, index) => {
+                                const isNew = index === 0;
+                                // Calculate style based on index to create drift effect
+                                // Index 0 is center. Higher indexes drift down and fade.
+                                const yOffset = index * 24; 
+                                const scale = Math.max(0.5, 1 - (index * 0.18));
+                                const opacity = Math.max(0, 1 - (index * 0.25));
+                                const blur = index * 1.5;
+
+                                return (
+                                    <div 
+                                        key={word.id}
+                                        className={`absolute text-center font-serif font-black tracking-widest transition-all duration-1000 ease-out flex items-center justify-center whitespace-nowrap ${isNew ? 'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] z-10' : 'text-zinc-500 z-0'}`}
+                                        style={{
+                                            top: `50%`,
+                                            left: `50%`,
+                                            // Combine drift (Y), random scatter (X), and shrinking (scale)
+                                            transform: `translate(calc(-50% + ${word.xOffset}px), calc(-50% + ${yOffset}px)) scale(${scale})`,
+                                            opacity: opacity,
+                                            fontSize: isNew ? '2rem' : '1.5rem',
+                                            filter: `blur(${blur}px)`
+                                        }}
+                                    >
+                                        {word.text}
+                                    </div>
+                                );
+                            })}
+                            
+                            {/* Empty State */}
+                            {spiritWords.length === 0 && (
+                                <div className="text-zinc-800 font-serif text-sm italic animate-pulse">
+                                    ...listening...
+                                </div>
+                            )}
                         </div>
                     </div>
 
