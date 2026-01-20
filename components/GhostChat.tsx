@@ -60,7 +60,7 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); // Browsers usually record webm
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
@@ -93,23 +93,43 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // Convert raw PCM 16-bit integer data to AudioBuffer
+  const decodePcmData = (data: Uint8Array, ctx: AudioContext): AudioBuffer => {
+    const pcm16 = new Int16Array(data.buffer);
+    // Gemini 2.5 Flash TTS is typically 24kHz Mono
+    const sampleRate = 24000;
+    const channels = 1;
+    const frameCount = pcm16.length;
+    
+    const audioBuffer = ctx.createBuffer(channels, frameCount, sampleRate);
+    const channelData = audioBuffer.getChannelData(0);
+    
+    for (let i = 0; i < frameCount; i++) {
+      // Normalize 16-bit integer to float [-1, 1]
+      channelData[i] = pcm16[i] / 32768.0;
+    }
+    
+    return audioBuffer;
+  };
+
   const speak = async (text: string) => {
     if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     
     setIsSpeaking(true);
-    const audioBuffer = await generateSpookySpeech(text);
-    if (audioBuffer && audioContextRef.current) {
+    const pcmData = await generateSpookySpeech(text);
+    
+    if (pcmData && audioContextRef.current) {
         try {
-            const buffer = await audioContextRef.current.decodeAudioData(audioBuffer);
+            const buffer = decodePcmData(pcmData, audioContextRef.current);
             const source = audioContextRef.current.createBufferSource();
             source.buffer = buffer;
             source.connect(audioContextRef.current.destination);
             source.onended = () => setIsSpeaking(false);
             source.start(0);
         } catch (e) {
-            console.error("Audio decode error", e);
+            console.error("Audio processing error", e);
             setIsSpeaking(false);
         }
     } else {

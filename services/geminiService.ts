@@ -88,7 +88,7 @@ export const sendGhostChatMessage = async (history: ChatMessage[], newMessage: s
   }
 };
 
-export const generateSpookySpeech = async (text: string): Promise<ArrayBuffer | null> => {
+export const generateSpookySpeech = async (text: string): Promise<Uint8Array | null> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -111,7 +111,7 @@ export const generateSpookySpeech = async (text: string): Promise<ArrayBuffer | 
       for (let i = 0; i < len; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-      return bytes.buffer;
+      return bytes;
     }
     return null;
   } catch (error) {
