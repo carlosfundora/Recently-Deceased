@@ -139,29 +139,42 @@ const App: React.FC = () => {
       <header 
         ref={headerRef}
         onMouseMove={handleHeaderMouseMove}
-        className="sticky top-0 z-40 bg-[#050505] border-b border-zinc-900 transition-all duration-300 group relative overflow-hidden"
+        className="sticky top-0 z-40 bg-[#050505] border-b border-zinc-900 transition-all duration-300 group relative overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]"
       >
+        {/* Subtle Fog/Mist Background Effect */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
+           <div className="absolute -inset-[100%] bg-[radial-gradient(circle,rgba(255,255,255,0.05)_0%,transparent_60%)] animate-[spin_60s_linear_infinite_reverse] blur-3xl origin-bottom-left" />
+           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay" />
+        </div>
+
+        {/* Mouse Spotlight */}
         <div 
-          className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-screen"
           style={{
-            background: 'radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%)'
+            background: 'radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.05), transparent 40%)'
           }}
         />
 
         <div className="w-full mx-auto relative z-10 flex items-center justify-between" style={{ maxWidth: 'var(--container-max-width)', padding: '0.75rem var(--space-md)' }}>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-5">
+              {/* Ghost Chat Button with Pulse Effect */}
               <button 
                  onClick={() => setIsChatOpen(!isChatOpen)}
-                 className="text-white hover:text-zinc-300 transition-transform hover:scale-110 active:scale-95 flex items-center"
+                 className="relative group/ghost text-zinc-400 hover:text-white transition-all duration-500 hover:scale-105 active:scale-95 flex items-center justify-center w-12 h-12"
                  title="Commune with the guide"
               >
-                <Ghost size={40} strokeWidth={1.5} />
+                {/* Pulsing Glow Background */}
+                <div className={`absolute inset-0 rounded-full bg-zinc-600/30 blur-md transition-opacity duration-1000 ${isChatOpen ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover/ghost:opacity-50'}`}></div>
+                <div className="absolute inset-0 rounded-full bg-white/5 blur-sm animate-ghost-pulse"></div>
+                
+                <Ghost size={36} strokeWidth={1.5} className={`relative z-10 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)] ${isChatOpen ? 'text-white' : ''}`} />
               </button>
+
               <div>
-                <h1 className="font-serif text-lg md:text-xl font-bold leading-tight text-white tracking-[0.15em] uppercase drop-shadow-md">
-                  Travel Guide
+                <h1 className="font-serif text-lg md:text-xl font-bold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-300 to-zinc-500 tracking-[0.15em] uppercase drop-shadow-[0_2px_10px_rgba(255,255,255,0.1)]">
+                  <span className="animate-flicker-glow block">Travel Guide</span>
                 </h1>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold hidden sm:block">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold hidden sm:block opacity-80">
                   For the Recently Deceased
                 </p>
               </div>
