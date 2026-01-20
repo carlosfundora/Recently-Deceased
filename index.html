@@ -28,6 +28,7 @@
               'mist-rise': 'mistRise 10s ease-in-out infinite alternate',
               'flicker-glow': 'flickerGlow 4s infinite',
               'ghost-pulse': 'ghostPulse 3s ease-in-out infinite',
+              'scanline': 'scanline 8s linear infinite',
             },
             keyframes: {
               fog: {
@@ -48,6 +49,10 @@
               ghostPulse: {
                 '0%, 100%': { opacity: '0.4' },
                 '50%': { opacity: '0.8' },
+              },
+              scanline: {
+                '0%': { transform: 'translateY(-100%)' },
+                '100%': { transform: 'translateY(100%)' },
               }
             }
           }
@@ -151,16 +156,22 @@
         background: #000000;
         filter: grayscale(100%) contrast(1.2);
       }
-      .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-        background: #000000;
-        color: #fafafa;
-        box-shadow: 0 0 0 1px #52525b;
-        border-radius: 0;
-        font-family: 'Inter', sans-serif;
+      .leaflet-tooltip.custom-ghost-tooltip {
+        background-color: rgba(10, 10, 10, 0.9);
+        border: 1px solid #3f3f46;
+        color: #e4e4e7;
+        font-family: 'Cinzel', serif;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        border-radius: 2px;
       }
-      .leaflet-popup-close-button {
-        color: #fafafa !important;
-      }
+      .leaflet-tooltip-left::before { border-left-color: rgba(10, 10, 10, 0.9); }
+      .leaflet-tooltip-right::before { border-right-color: rgba(10, 10, 10, 0.9); }
+      .leaflet-tooltip-top::before { border-top-color: rgba(10, 10, 10, 0.9); }
+      .leaflet-tooltip-bottom::before { border-bottom-color: rgba(10, 10, 10, 0.9); }
       
       /* Selection Color */
       ::selection {
@@ -176,7 +187,9 @@
     "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "leaflet": "https://esm.sh/leaflet@1.9.4"
+    "react-icons/gi": "https://esm.sh/react-icons@5.4.0/gi?external=react",
+    "leaflet": "https://esm.sh/leaflet@1.9.4",
+    "react-icons/": "https://esm.sh/react-icons@^5.5.0/"
   }
 }
 </script>

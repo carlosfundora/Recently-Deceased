@@ -6,7 +6,9 @@ import { CemeteryMap } from './components/CemeteryMap';
 import { CemeteryOfTheDay } from './components/CemeteryOfTheDay';
 import { SoulTracker } from './components/SoulTracker';
 import { GhostChat } from './components/GhostChat';
-import { Ghost, Map as MapIcon, List, SortAsc, CalendarClock, Search, MapPin, X } from 'lucide-react';
+import { GhostMeter } from './components/GhostMeter';
+import { Ghost, Map as MapIcon, List, SortAsc, CalendarClock, Search, X } from 'lucide-react';
+import { GiThermometerScale } from "react-icons/gi";
 
 const STORAGE_KEY = 'nola_cemetery_passport_v2';
 
@@ -19,6 +21,7 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCemeteryId, setSelectedCemeteryId] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isMeterOpen, setIsMeterOpen] = useState(false);
 
   // Header spotlight refs
   const headerRef = useRef<HTMLDivElement>(null);
@@ -149,10 +152,10 @@ const App: React.FC = () => {
             <div className="flex items-center gap-4">
               <button 
                  onClick={() => setIsChatOpen(!isChatOpen)}
-                 className="p-2 bg-zinc-950 text-white rounded-[2px] border border-zinc-700 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:bg-zinc-800 hover:border-zinc-500 transition-all hover:scale-105"
+                 className="text-white hover:text-zinc-300 transition-transform hover:scale-110 active:scale-95 flex items-center"
                  title="Commune with the guide"
               >
-                <Ghost className="w-6 h-6" />
+                <Ghost size={40} strokeWidth={1.5} />
               </button>
               <div>
                 <h1 className="font-serif text-lg md:text-xl font-bold leading-tight text-white tracking-[0.15em] uppercase drop-shadow-md">
@@ -234,17 +237,26 @@ const App: React.FC = () => {
                   <div className="flex">
                     <button
                       onClick={() => setView('list')}
-                      className={`p-3 transition-colors ${view === 'list' ? 'text-zinc-200 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400'}`}
+                      className={`p-3 border-r border-zinc-800 transition-colors ${view === 'list' ? 'text-zinc-200 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400'}`}
                       title="List View"
                     >
                       <List size={16} />
                     </button>
                     <button
                       onClick={() => setView('map')}
-                      className={`p-3 transition-colors ${view === 'map' ? 'text-zinc-200 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400'}`}
+                      className={`p-3 border-r border-zinc-800 transition-colors ${view === 'map' ? 'text-zinc-200 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400'}`}
                       title="Map View"
                     >
                       <MapIcon size={16} /> 
+                    </button>
+                    
+                    {/* Ghost Meter Button */}
+                    <button
+                       onClick={() => setIsMeterOpen(true)}
+                       className="p-3 text-zinc-600 hover:text-green-500 hover:bg-zinc-900 transition-colors"
+                       title="Ghost Meter"
+                    >
+                       <GiThermometerScale size={16} />
                     </button>
                   </div>
               </div>
@@ -322,6 +334,9 @@ const App: React.FC = () => {
 
       {/* Ghost Chat Widget */}
       <GhostChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      
+      {/* Ghost Meter Overlay */}
+      <GhostMeter isOpen={isMeterOpen} onClose={() => setIsMeterOpen(false)} />
     </div>
   );
 };

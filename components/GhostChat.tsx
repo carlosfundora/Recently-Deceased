@@ -60,7 +60,7 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); // Browsers usually record webm
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
@@ -96,7 +96,6 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
   // Convert raw PCM 16-bit integer data to AudioBuffer
   const decodePcmData = (data: Uint8Array, ctx: AudioContext): AudioBuffer => {
     const pcm16 = new Int16Array(data.buffer);
-    // Gemini 2.5 Flash TTS is typically 24kHz Mono
     const sampleRate = 24000;
     const channels = 1;
     const frameCount = pcm16.length;
@@ -105,7 +104,6 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
     const channelData = audioBuffer.getChannelData(0);
     
     for (let i = 0; i < frameCount; i++) {
-      // Normalize 16-bit integer to float [-1, 1]
       channelData[i] = pcm16[i] / 32768.0;
     }
     
@@ -140,27 +138,30 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-80 md:w-96 bg-black border border-zinc-700 shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col animate-in slide-in-from-bottom-10 fade-in duration-300" style={{ height: '500px', borderRadius: '4px' }}>
+    <div className="fixed bottom-6 right-6 z-50 w-80 md:w-96 bg-[#050505] border border-zinc-700 shadow-[0_0_30px_rgba(255,255,255,0.05)] flex flex-col animate-in slide-in-from-bottom-10 fade-in duration-300 overflow-hidden" style={{ height: '500px', borderRadius: '4px' }}>
+      {/* Scanline Overlay */}
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-[60] bg-[length:100%_4px,3px_100%] opacity-20"></div>
+      
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/50">
+      <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-950 relative z-50">
         <div className="flex items-center gap-2 text-zinc-200">
-           <Ghost size={16} />
-           <span className="font-serif font-bold tracking-widest text-sm uppercase">Spirit Box</span>
+           <Ghost size={16} className="text-zinc-400" />
+           <span className="font-serif font-bold tracking-[0.2em] text-sm uppercase text-zinc-300">Spirit Box</span>
         </div>
-        <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+        <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors">
           <X size={18} />
         </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0a0a0a]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black relative z-40">
          {messages.map((msg, idx) => (
            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
              <div 
-               className={`max-w-[80%] p-3 text-xs leading-relaxed border ${
+               className={`max-w-[85%] p-3 text-xs leading-relaxed border backdrop-blur-sm ${
                  msg.role === 'user' 
-                   ? 'bg-zinc-800 text-zinc-100 border-zinc-700 rounded-tl-lg rounded-bl-lg rounded-br-none' 
-                   : 'bg-black text-zinc-300 border-zinc-800 rounded-tr-lg rounded-br-lg rounded-bl-none shadow-[0_0_10px_rgba(255,255,255,0.05)]'
+                   ? 'bg-zinc-900/80 text-zinc-200 border-zinc-700 rounded-tl-sm rounded-bl-sm' 
+                   : 'bg-zinc-950/80 text-zinc-400 border-zinc-800 rounded-tr-sm rounded-br-sm shadow-[0_0_15px_rgba(255,255,255,0.02)]'
                }`}
              >
                {msg.text}
@@ -169,8 +170,8 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
          ))}
          {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-black border border-zinc-800 p-3 rounded-tr-lg rounded-br-lg rounded-bl-none">
-                 <Loader2 size={16} className="animate-spin text-zinc-500" />
+              <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-tr-sm rounded-br-sm">
+                 <Loader2 size={16} className="animate-spin text-zinc-600" />
               </div>
             </div>
          )}
@@ -178,10 +179,10 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-zinc-800 bg-black flex items-center gap-2">
+      <div className="p-3 border-t border-zinc-800 bg-zinc-950 flex items-center gap-2 relative z-50">
          <button 
            onClick={isRecording ? stopRecording : startRecording}
-           className={`p-2 rounded-full border transition-all ${isRecording ? 'bg-red-900/20 border-red-500 text-red-500 animate-pulse' : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200'}`}
+           className={`p-2 rounded-full border transition-all ${isRecording ? 'bg-red-900/20 border-red-900 text-red-500 animate-pulse' : 'bg-black border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600'}`}
          >
            {isRecording ? <StopCircle size={18} /> : <Mic size={18} />}
          </button>
@@ -190,14 +191,14 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Type your message..."
-            className="flex-1 bg-zinc-900 border border-zinc-800 text-xs text-white p-2 focus:outline-none focus:border-zinc-600 font-mono"
+            placeholder="Summon text..."
+            className="flex-1 bg-black border border-zinc-800 text-xs text-white p-2 focus:outline-none focus:border-zinc-600 font-mono tracking-wide placeholder-zinc-800"
             disabled={isRecording}
          />
          <button 
            onClick={handleSend}
            disabled={!input.trim() || isRecording}
-           className="p-2 text-zinc-400 hover:text-white disabled:opacity-30"
+           className="p-2 text-zinc-500 hover:text-white disabled:opacity-30 transition-colors"
          >
            <Send size={18} />
          </button>
@@ -205,7 +206,7 @@ export const GhostChat: React.FC<GhostChatProps> = ({ isOpen, onClose }) => {
       
       {/* Audio Status */}
       {isSpeaking && (
-         <div className="absolute top-14 right-4 text-zinc-500 animate-pulse">
+         <div className="absolute top-16 right-4 text-zinc-600 animate-pulse z-50">
             <Volume2 size={16} />
          </div>
       )}
