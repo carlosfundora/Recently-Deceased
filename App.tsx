@@ -2,26 +2,53 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Cemetery, CemeteryUpdate } from './types';
 import { INITIAL_CEMETERIES } from './constants';
 import { CemeteryCard } from './components/CemeteryCard';
+import { CemeteryDetailView } from './components/CemeteryDetailView';
 import { CemeteryMap } from './components/CemeteryMap';
 import { CemeteryOfTheDay } from './components/CemeteryOfTheDay';
-import { SoulTracker } from './components/SoulTracker';
+import { AchievementsView } from './components/AchievementsView';
 import { GhostChat } from './components/GhostChat';
 import { GhostMeter } from './components/GhostMeter';
-import { Ghost, Map as MapIcon, List, SortAsc, CalendarClock, Search, X } from 'lucide-react';
-import { GiThermometerScale } from "react-icons/gi";
+import { UnifiedGallery } from './components/UnifiedGallery';
+import { NotableSpiritsRegistry } from './components/NotableSpiritsRegistry';
+import { Sidebar } from './components/Sidebar';
+import { List, Search, Menu, X, LayoutGrid, LayoutList } from 'lucide-react';
+import { GiThermometerScale, GiCrystalBall } from "react-icons/gi";
+import { LiaGhostSolid } from "react-icons/lia";
+import { TbPolaroid, TbMapPin, TbLayoutCards } from "react-icons/tb";
 
 const STORAGE_KEY = 'nola_cemetery_passport_v2';
+
+// Views configuration for Swipe
+const VIEWS = ['chat', 'dashboard', 'gallery', 'meter'] as const;
+type MainView = typeof VIEWS[number];
 
 const App: React.FC = () => {
   const [cemeteries, setCemeteries] = useState<Cemetery[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [view, setView] = useState<'list' | 'map'>('list');
+  
+  // View States
+  const [currentViewIndex, setCurrentViewIndex] = useState(1); // Default to Dashboard (index 1)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedCemeteryId, setSelectedCemeteryId] = useState<string | null>(null);
+  const [detailViewTab, setDetailViewTab] = useState<'overview' | 'spirits' | 'gallery'>('overview');
+  const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
+  const [isSpiritsRegistryOpen, setIsSpiritsRegistryOpen] = useState(false);
+  
+  // Dashboard Mode State: 'card' is default, 'map', 'grid' (1:1), 'list' (compact row)
+  const [dashboardMode, setDashboardMode] = useState<'card' | 'grid' | 'list' | 'map'>('card');
+
+  // Search State
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter & Sort States
   const [filter, setFilter] = useState<'all' | 'visited' | 'pending'>('all');
   const [sortType, setSortType] = useState<'name' | 'date'>('name');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCemeteryId, setSelectedCemeteryId] = useState<string | null>(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isMeterOpen, setIsMeterOpen] = useState(false);
+
+  // Touch handling for swipe
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   // Header spotlight refs
   const headerRef = useRef<HTMLDivElement>(null);
@@ -38,6 +65,10 @@ const App: React.FC = () => {
               visited: saved.visited,
               visitedDate: saved.visitedDate,
               history: saved.history || init.history,
+              longHistory: saved.longHistory || '',
+              founded: saved.founded || '',
+              interments: saved.interments || '',
+              notableInterments: saved.notableInterments || [],
               userNotes: saved.userNotes || init.userNotes,
               dailyFacts: saved.dailyFacts,
               photos: saved.photos || [] 
@@ -78,6 +109,49 @@ const App: React.FC = () => {
       headerRef.current.style.setProperty('--mouse-x', `${x}px`);
       headerRef.current.style.setProperty('--mouse-y', `${y}px`);
     }
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchStartY.current = e.targetTouches[0].clientY;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    // Horizontal Swipe (Nav)
+    const distanceX = touchStartX.current - touchEndX.current;
+    if (Math.abs(distanceX) > 50) {
+        const isLeftSwipe = distanceX > 50;
+        const isRightSwipe = distanceX < -50;
+
+        if (isLeftSwipe && currentViewIndex < VIEWS.length - 1) {
+            setCurrentViewIndex(prev => prev + 1);
+        }
+        if (isRightSwipe && currentViewIndex > 0) {
+            setCurrentViewIndex(prev => prev - 1);
+        }
+    }
+
+    // Vertical Swipe (Pull Down for Chat)
+    if (touchStartY.current && e.changedTouches[0]) {
+        const touchEndY = e.changedTouches[0].clientY;
+        const distanceY = touchEndY - touchStartY.current;
+        
+        // Only trigger if starting near top (simulating pull down) and pulling down significantly
+        if (distanceY > 100 && touchStartY.current < 150) {
+            setCurrentViewIndex(0); // Open Chat
+        }
+    }
+    
+    // Reset
+    touchStartX.current = null;
+    touchEndX.current = null;
+    touchStartY.current = null;
   };
 
   const cemeteryOfTheDay = useMemo(() => {
@@ -126,20 +200,43 @@ const App: React.FC = () => {
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <Ghost className="animate-pulse w-12 h-12" />
+        <LiaGhostSolid className="animate-pulse w-12 h-12" />
       </div>
     );
   }
 
   const selectedCemetery = cemeteries.find(c => c.id === selectedCemeteryId);
+  const currentView = VIEWS[currentViewIndex];
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 font-sans selection:bg-white selection:text-black pb-24 relative">
-      {/* Sticky Header */}
+    <div 
+        className="min-h-screen bg-black text-zinc-300 font-sans selection:bg-white selection:text-black relative overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+    >
+      
+      {/* Navigation Sidebar */}
+      <Sidebar 
+         isOpen={isSidebarOpen} 
+         onClose={() => setIsSidebarOpen(false)} 
+         filter={filter}
+         onFilterChange={setFilter}
+         sortType={sortType}
+         onSortChange={setSortType}
+         onOpenGallery={() => { setCurrentViewIndex(2); setIsSidebarOpen(false); }}
+         onOpenAchievements={() => { setIsAchievementsOpen(true); setIsSidebarOpen(false); }}
+         onOpenSpirits={() => { setIsSpiritsRegistryOpen(true); setIsSidebarOpen(false); }}
+         onGoHome={() => { setCurrentViewIndex(1); setIsSidebarOpen(false); }}
+         onOpenChat={() => { setCurrentViewIndex(0); setIsSidebarOpen(false); }}
+         onOpenMeter={() => { setCurrentViewIndex(3); setIsSidebarOpen(false); }}
+      />
+
+      {/* Sticky Header with Integrated Controls */}
       <header 
         ref={headerRef}
         onMouseMove={handleHeaderMouseMove}
-        className="sticky top-0 z-40 bg-[#050505] border-b border-zinc-900 transition-all duration-300 group relative overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]"
+        className="sticky top-0 z-40 bg-[#050505] border-b border-zinc-900 transition-all duration-300 group relative shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]"
       >
         {/* Subtle Fog/Mist Background Effect */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
@@ -155,201 +252,275 @@ const App: React.FC = () => {
           }}
         />
 
-        <div className="w-full mx-auto relative z-10 flex items-center justify-between" style={{ maxWidth: 'var(--container-max-width)', padding: '0.75rem var(--space-md)' }}>
-            <div className="flex items-center gap-5">
-              {/* Ghost Chat Button with Pulse Effect */}
-              <button 
-                 onClick={() => setIsChatOpen(!isChatOpen)}
-                 className="relative group/ghost text-zinc-400 hover:text-white transition-all duration-500 hover:scale-105 active:scale-95 flex items-center justify-center w-12 h-12"
-                 title="Commune with the guide"
-              >
-                {/* Pulsing Glow Background */}
-                <div className={`absolute inset-0 rounded-full bg-zinc-600/30 blur-md transition-opacity duration-1000 ${isChatOpen ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover/ghost:opacity-50'}`}></div>
-                <div className="absolute inset-0 rounded-full bg-white/5 blur-sm animate-ghost-pulse"></div>
-                
-                <Ghost size={36} strokeWidth={1.5} className={`relative z-10 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)] ${isChatOpen ? 'text-white' : ''}`} />
-              </button>
+        <div className="w-full mx-auto relative z-10 flex items-center justify-between gap-4 h-16 md:h-20" style={{ maxWidth: 'var(--container-max-width)', padding: '0 var(--space-md)' }}>
+            
+            {/* Left: Menu & Brand */}
+            <div className="flex items-center gap-4 shrink-0">
+                <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="text-zinc-400 hover:text-white transition-colors p-2"
+                >
+                    <Menu size={24} />
+                </button>
+                {/* Chat Icon - Left Aligned */}
+                <button
+                   onClick={() => setCurrentViewIndex(0)}
+                   className={`p-2 rounded transition-colors ${currentView === 'chat' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'}`}
+                   title="Spirit Box"
+                >
+                   <GiCrystalBall size={24} />
+                </button>
 
-              <div className="flex flex-col">
-                <h1 className="font-serif text-lg md:text-xl font-bold leading-tight text-zinc-200 tracking-[0.15em] uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                  <span className="animate-flicker-glow block">Travel Guide</span>
-                </h1>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold hidden sm:block opacity-80">
-                  For the Recently Deceased
-                </p>
-              </div>
+                <div className="hidden md:flex flex-col ml-2">
+                  <h1 className="font-serif text-lg font-bold leading-tight text-zinc-200 tracking-[0.15em] uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                    <span className="animate-flicker-glow block">Travel Guide</span>
+                  </h1>
+                </div>
             </div>
-            {/* Empty right side to balance layout if needed, or minimalistic */}
+
+            {/* Right: Tools & Toggles */}
+            <div className="flex items-center gap-1 md:gap-3 shrink-0">
+               {/* Search Toggle */}
+               <button
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  className={`p-2 rounded transition-colors ${isSearchOpen || searchQuery ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'}`}
+                  title="Search"
+               >
+                  <Search size={20} />
+               </button>
+
+               {/* View Mode Switcher (Dashboard only) */}
+               {currentViewIndex === 1 && (
+                   <div className="flex bg-zinc-900 border border-zinc-800 rounded-sm p-1 gap-1">
+                       <button
+                          onClick={() => setDashboardMode('card')}
+                          className={`p-1.5 rounded-sm transition-colors ${dashboardMode === 'card' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                          title="Card View"
+                       >
+                          <TbLayoutCards size={16} />
+                       </button>
+                       <button
+                          onClick={() => setDashboardMode('grid')}
+                          className={`p-1.5 rounded-sm transition-colors ${dashboardMode === 'grid' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                          title="Grid View (1:1)"
+                       >
+                          <LayoutGrid size={16} />
+                       </button>
+                       <button
+                          onClick={() => setDashboardMode('list')}
+                          className={`p-1.5 rounded-sm transition-colors ${dashboardMode === 'list' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                          title="List View"
+                       >
+                          <LayoutList size={16} />
+                       </button>
+                       <button
+                          onClick={() => setDashboardMode('map')}
+                          className={`p-1.5 rounded-sm transition-colors ${dashboardMode === 'map' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                          title="Map View"
+                       >
+                          <TbMapPin size={16} />
+                       </button>
+                   </div>
+               )}
+
+               <div className="w-px h-6 bg-zinc-800 mx-1"></div>
+
+               {/* Quick Jump Icons */}
+               <button
+                  onClick={() => setCurrentViewIndex(1)}
+                  className={`p-2 rounded transition-colors ${currentView === 'dashboard' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'}`}
+                  title="Dashboard"
+               >
+                  <List size={20} />
+               </button>
+               <button
+                  onClick={() => setCurrentViewIndex(2)}
+                  className={`p-2 rounded transition-colors ${currentView === 'gallery' ? 'text-white bg-zinc-800' : 'text-zinc-500 hover:text-white'}`}
+                  title="Evidence"
+               >
+                  <TbPolaroid size={20} />
+               </button>
+               <button
+                  onClick={() => setCurrentViewIndex(3)}
+                  className={`p-2 rounded transition-colors ${currentView === 'meter' ? 'text-green-500 bg-zinc-800' : 'text-zinc-500 hover:text-green-500'}`}
+                  title="P.K.E. Meter"
+               >
+                  <GiThermometerScale size={20} />
+               </button>
+            </div>
+        </div>
+
+        {/* Global Dropdown Search Bar */}
+        <div className={`absolute top-full left-0 w-full bg-[#0a0a0a] border-b border-zinc-800 transition-all duration-300 overflow-hidden ${isSearchOpen ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="max-w-4xl mx-auto p-4 flex items-center gap-3">
+                 <Search size={18} className="text-zinc-500 shrink-0" />
+                 <input 
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="SEARCH SPIRITS, LOCATIONS, OR HISTORY..."
+                    className="flex-1 bg-transparent border-none text-zinc-200 placeholder-zinc-700 focus:outline-none font-mono uppercase tracking-widest text-sm"
+                    autoFocus={isSearchOpen}
+                 />
+                 {searchQuery && (
+                     <button onClick={() => setSearchQuery('')} className="text-zinc-600 hover:text-white">
+                         <X size={16} />
+                     </button>
+                 )}
+            </div>
         </div>
       </header>
 
-      <main className="w-full mx-auto relative z-0 bg-black" style={{ maxWidth: 'var(--container-max-width)', padding: 'var(--space-md)' }}>
-        
-        {/* Soul Collection Section */}
-        <SoulTracker total={cemeteries.length} visited={visitedCount} />
-
-        {view === 'list' && (
-          <>
-            {/* Cemetery of the Day */}
-            {cemeteryOfTheDay && (
-              <CemeteryOfTheDay 
-                cemetery={cemeteryOfTheDay} 
-                onUpdate={handleUpdateCemetery}
-                onViewDetails={(id) => setSelectedCemeteryId(id)}
-              />
-            )}
-
-            {/* Toolbar */}
-            <div className="mb-[var(--space-lg)] p-[var(--space-sm)] bg-[#050505] border border-zinc-800 flex flex-col lg:flex-row gap-4 items-center justify-between shadow-[var(--ghost-glow)]" style={{ borderRadius: 'var(--card-radius)' }}>
+      {/* Main Content Area */}
+      <div className="relative w-full overflow-hidden" style={{ height: 'calc(100vh - 80px)' }}>
+          
+          {/* View Container with transitions */}
+          <div className="w-full h-full relative">
               
-              {/* Filter Buttons */}
-              <div className="flex gap-2 w-full lg:w-auto justify-center lg:justify-start">
-                 {(['all', 'visited', 'pending'] as const).map((f) => (
-                   <button 
-                     key={f}
-                     onClick={() => setFilter(f)}
-                     className={`px-4 py-2 text-[10px] uppercase font-bold tracking-[0.2em] transition-colors border ${filter === f ? 'bg-[#d4d4d8] text-black border-zinc-300' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'}`}
-                   >
-                     {f}
-                   </button>
-                 ))}
-              </div>
-
-              {/* Center Controls: Sort | Search | View */}
-              <div className="flex flex-1 w-full gap-0 border border-zinc-800 bg-black items-center">
-                  {/* Sort Dropdown */}
-                  <div className="relative border-r border-zinc-800 min-w-[40px] md:min-w-[140px]">
-                    <select
-                      value={sortType}
-                      onChange={(e) => setSortType(e.target.value as 'name' | 'date')}
-                      className="w-full appearance-none bg-black text-zinc-400 text-[10px] font-bold uppercase tracking-wider pl-9 pr-4 py-3 focus:outline-none cursor-pointer hover:bg-zinc-900 transition-colors h-full"
-                    >
-                      <option value="name">Name</option>
-                      <option value="date">Date</option>
-                    </select>
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none">
-                      {sortType === 'name' ? <SortAsc size={14} /> : <CalendarClock size={14} />}
-                    </div>
+              {/* Chat View */}
+              {currentView === 'chat' && (
+                  <div className="w-full h-full absolute inset-0 animate-in slide-in-from-top duration-500 z-50">
+                      <GhostChat isOpen={true} onClose={() => setCurrentViewIndex(1)} fullScreen={true} />
                   </div>
-
-                  {/* Search Bar - Flex 1 to take space */}
-                  <div className="flex-1 relative border-r border-zinc-800">
-                     <input 
-                       type="text"
-                       value={searchQuery}
-                       onChange={(e) => setSearchQuery(e.target.value)}
-                       placeholder="SEARCH..."
-                       className="w-full bg-black text-zinc-200 text-[10px] font-mono p-3 pl-9 focus:outline-none placeholder-zinc-700 uppercase tracking-widest"
-                     />
-                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none">
-                       <Search size={14} />
-                     </div>
-                  </div>
-
-                  {/* View Toggle (Pin Button) */}
-                  <div className="flex">
-                    <button
-                      onClick={() => setView('list')}
-                      className={`p-3 border-r border-zinc-800 transition-colors ${view === 'list' ? 'text-zinc-200 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400'}`}
-                      title="List View"
-                    >
-                      <List size={16} />
-                    </button>
-                    <button
-                      onClick={() => setView('map')}
-                      className={`p-3 border-r border-zinc-800 transition-colors ${view === 'map' ? 'text-zinc-200 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400'}`}
-                      title="Map View"
-                    >
-                      <MapIcon size={16} /> 
-                    </button>
-                    
-                    {/* Ghost Meter Button */}
-                    <button
-                       onClick={() => setIsMeterOpen(true)}
-                       className="p-3 text-zinc-600 hover:text-green-500 hover:bg-zinc-900 transition-colors"
-                       title="Ghost Meter"
-                    >
-                       <GiThermometerScale size={16} />
-                    </button>
-                  </div>
-              </div>
-
-            </div>
-
-            {/* Grid */}
-            <div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" 
-              style={{ gap: 'var(--space-md)' }}
-            >
-              {processedCemeteries.length > 0 ? (
-                processedCemeteries.map(cemetery => (
-                  <CemeteryCard 
-                    key={cemetery.id} 
-                    cemetery={cemetery} 
-                    onUpdate={handleUpdateCemetery} 
-                  />
-                ))
-              ) : (
-                <div className="col-span-full py-20 text-center text-zinc-700 bg-zinc-950/30 border border-zinc-900 border-dashed">
-                  <Ghost className="w-16 h-16 mx-auto mb-4 opacity-10" />
-                  <p className="text-lg font-serif">No spirits found matching your inquiry.</p>
-                </div>
               )}
-            </div>
-          </>
-        )}
 
-        {view === 'map' && (
-          <div className="animate-in fade-in zoom-in-95 duration-500">
-             <div className="mb-4 flex justify-between items-center">
-               <button 
-                  onClick={() => setView('list')} 
-                  className="flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
-               >
-                 &larr; Back to List
-               </button>
-               <div className="text-[10px] font-mono text-zinc-500 uppercase">{processedCemeteries.length} Locations Found</div>
-             </div>
-             <CemeteryMap 
-               cemeteries={processedCemeteries} 
-               onSelectCemetery={(id) => setSelectedCemeteryId(id)} 
-             />
+              {/* Dashboard View */}
+              {currentView === 'dashboard' && (
+                  <div className="w-full h-full absolute inset-0 overflow-y-auto pb-24 animate-in fade-in duration-300 scroll-smooth">
+                      
+                      {/* Map Mode: Map on top (edge-to-edge), List below */}
+                      {dashboardMode === 'map' && (
+                          <div className="flex flex-col w-full h-full">
+                              <div className="w-full h-full sticky top-0 z-20">
+                                <CemeteryMap 
+                                  cemeteries={processedCemeteries} 
+                                  onSelectCemetery={(id) => { setSelectedCemeteryId(id); setDetailViewTab('overview'); }}
+                                />
+                              </div>
+                          </div>
+                      )}
+
+                      {/* Card / Grid / List Modes */}
+                      {dashboardMode !== 'map' && (
+                          <main className="w-full mx-auto relative z-0" style={{ maxWidth: 'var(--container-max-width)', padding: 'var(--space-md)' }}>
+                            {/* Cemetery of the Day (Only in Card Mode) */}
+                            {dashboardMode === 'card' && cemeteryOfTheDay && (
+                              <CemeteryOfTheDay 
+                                cemetery={cemeteryOfTheDay} 
+                                onUpdate={handleUpdateCemetery}
+                                onViewDetails={(id) => { setSelectedCemeteryId(id); setDetailViewTab('overview'); }}
+                              />
+                            )}
+
+                            {/* Info Bar / Result Count */}
+                            <div className="flex justify-between items-center mb-6 px-2 border-b border-zinc-900 pb-2">
+                              <span className="text-[10px] font-mono uppercase text-zinc-500 tracking-widest">
+                                  {filter !== 'all' && <span className="text-white font-bold mr-2">{filter}</span>}
+                                  Displaying {processedCemeteries.length} Locations
+                              </span>
+                              <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600 uppercase">
+                                  <span>Sorted by {sortType}</span>
+                              </div>
+                            </div>
+
+                            {/* Dynamic Grid Layout based on Mode */}
+                            <div 
+                              className={`
+                                  ${dashboardMode === 'card' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[var(--space-md)]' : ''}
+                                  ${dashboardMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3' : ''}
+                                  ${dashboardMode === 'list' ? 'flex flex-col gap-3' : ''}
+                              `}
+                            >
+                              {processedCemeteries.length > 0 ? (
+                                processedCemeteries.map(cemetery => (
+                                  <div key={cemetery.id}>
+                                      <CemeteryCard 
+                                        cemetery={cemetery} 
+                                        onUpdate={handleUpdateCemetery}
+                                        onOpenGallery={() => { setSelectedCemeteryId(cemetery.id); setDetailViewTab('gallery'); }}
+                                        onViewDetails={() => { setSelectedCemeteryId(cemetery.id); setDetailViewTab('overview'); }}
+                                        mode={dashboardMode}
+                                      />
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="col-span-full py-20 text-center text-zinc-700 bg-zinc-950/30 border border-zinc-900 border-dashed">
+                                  <LiaGhostSolid className="w-16 h-16 mx-auto mb-4 opacity-10" />
+                                  <p className="text-lg font-serif">No spirits found matching your inquiry.</p>
+                                  <button onClick={() => setFilter('all')} className="mt-4 text-xs underline uppercase tracking-widest hover:text-zinc-400">View All</button>
+                                </div>
+                              )}
+                            </div>
+                        </main>
+                      )}
+                  </div>
+              )}
+
+              {/* Gallery View */}
+              {currentView === 'gallery' && (
+                  <div className="w-full h-full absolute inset-0 animate-in fade-in slide-in-from-right-10 duration-300">
+                      <UnifiedGallery cemeteries={cemeteries} onClose={() => setCurrentViewIndex(1)} />
+                  </div>
+              )}
+
+              {/* Meter View */}
+              {currentView === 'meter' && (
+                  <div className="w-full h-full absolute inset-0 animate-in fade-in slide-in-from-right-10 duration-300">
+                      <GhostMeter isOpen={true} onClose={() => setCurrentViewIndex(1)} />
+                  </div>
+              )}
           </div>
-        )}
-      </main>
+      </div>
 
-      {/* Detail Modal Overlay */}
+      {/* Navigation Dots for Mobile Context */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-30 pointer-events-none">
+          {VIEWS.map((v, i) => (
+              <div 
+                key={v} 
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === currentViewIndex ? 'bg-white scale-125' : 'bg-zinc-700'}`} 
+              />
+          ))}
+      </div>
+
+      {/* Full Page Detail Modal Overlay */}
       {selectedCemetery && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-[var(--space-sm)] md:p-[var(--space-md)] bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-200">
           <div 
-             className="bg-black w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-zinc-800 shadow-[0_0_50px_rgba(255,255,255,0.05)] relative animate-in zoom-in-95 duration-300"
+             className="w-full h-full max-w-5xl max-h-[100vh] md:max-h-[95vh] md:rounded-lg overflow-hidden border border-zinc-800 shadow-[0_0_100px_rgba(0,0,0,0.8)] relative animate-in zoom-in-95 duration-300"
              onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-black/95 backdrop-blur z-10 border-b border-zinc-900 p-[var(--space-md)] flex justify-between items-center">
-               <h2 className="font-serif text-lg md:text-xl text-white tracking-widest">{selectedCemetery.name}</h2>
-               <button 
-                 onClick={() => setSelectedCemeteryId(null)}
-                 className="p-2 hover:bg-zinc-900 rounded-full transition-colors text-zinc-500 hover:text-white"
-               >
-                 <X size={20} />
-               </button>
-            </div>
-            <div className="p-[var(--space-md)] md:p-[var(--space-lg)] bg-black">
-               <CemeteryCard 
-                  cemetery={selectedCemetery} 
-                  onUpdate={handleUpdateCemetery}
-               />
-            </div>
+             <CemeteryDetailView 
+                cemetery={selectedCemetery}
+                onUpdate={handleUpdateCemetery}
+                onClose={() => setSelectedCemeteryId(null)}
+                initialTab={detailViewTab}
+             />
           </div>
-          <div className="absolute inset-0 -z-10 cursor-pointer" onClick={() => setSelectedCemeteryId(null)}></div>
         </div>
       )}
 
-      {/* Ghost Chat Widget */}
-      <GhostChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-      
-      {/* Ghost Meter Overlay */}
-      <GhostMeter isOpen={isMeterOpen} onClose={() => setIsMeterOpen(false)} />
+      {/* Achievements Overlay */}
+      {isAchievementsOpen && (
+          <div className="fixed inset-0 z-50 bg-black animate-in slide-in-from-bottom duration-300">
+              <AchievementsView 
+                 total={cemeteries.length} 
+                 visited={visitedCount} 
+                 onClose={() => setIsAchievementsOpen(false)} 
+              />
+          </div>
+      )}
+
+      {/* Notable Spirits Registry Overlay */}
+      {isSpiritsRegistryOpen && (
+          <div className="fixed inset-0 z-50 bg-black animate-in slide-in-from-bottom duration-300">
+              <NotableSpiritsRegistry 
+                 cemeteries={cemeteries}
+                 onUpdateCemetery={handleUpdateCemetery}
+                 onClose={() => setIsSpiritsRegistryOpen(false)} 
+              />
+          </div>
+      )}
+
     </div>
   );
 };

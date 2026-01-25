@@ -1,4 +1,4 @@
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI, Modality, Type } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -15,6 +15,37 @@ export const generateCemeteryHistory = async (cemeteryName: string): Promise<str
   } catch (error) {
     console.error("Gemini API Error:", error);
     return "The connection to the other side was interrupted. Please try again later.";
+  }
+};
+
+export const generateCemeteryDetails = async (cemeteryName: string): Promise<any> => {
+  try {
+    const prompt = `Provide detailed historical data for ${cemeteryName} in New Orleans. Include the founding date (or consecration), estimated number of interments (dead people), and a detailed history (approx 200 words) focusing on its lore, architecture, and significance.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+             founded: { type: Type.STRING, description: "Year or date founded/consecrated" },
+             interments: { type: Type.STRING, description: "Estimated number of interments (e.g. 'Over 100,000' or 'Unknown')" },
+             longHistory: { type: Type.STRING, description: "A detailed 2-3 paragraph history." }
+          },
+          required: ["founded", "interments", "longHistory"]
+        }
+      }
+    });
+
+    if (response.text) {
+        return JSON.parse(response.text);
+    }
+    return null;
+  } catch (error) {
+    console.error("Gemini Details Error:", error);
+    return null;
   }
 };
 
@@ -70,12 +101,9 @@ export const sendGhostChatMessage = async (history: ChatMessage[], newMessage: s
         parts: parts
     };
     
-    // We can't easily use chat.sendMessage with ad-hoc history + audio in a stateless way unless we rebuild the chat object or use generateContent with multi-turn structure.
-    // Ideally, for a persistent log in the UI, we just send the whole conversation history to generateContent.
-    
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: [...contents, prompt] as any, // Cast to any to bypass strict type checking for quick implementation, standard structure is correct though.
+      contents: [...contents, prompt] as any, 
       config: {
         systemInstruction: "You are a spirit guide for New Orleans cemeteries. You are spooky, helpful, and knowledgeable about history and the macabre. Keep answers concise.",
       }
@@ -97,7 +125,7 @@ export const generateSpookySpeech = async (text: string): Promise<Uint8Array | n
         responseModalities: [Modality.AUDIO], 
         speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Charon' }, // Charon sounds deeper/spookier
+              prebuiltVoiceConfig: { voiceName: 'Charon' }, 
             },
         },
       },

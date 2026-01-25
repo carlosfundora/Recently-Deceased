@@ -11,13 +11,15 @@ const GHOST_WORDS = [
   "BELOW", "COLD", "WAIT", "HELP", "RUN", "HIDE", "LOOK", "BURIED", "ASH", "BONE", 
   "DARK", "LEAVE", "NOW", "HERE", "GONE", "LOST", "SINK", "RISE", "FALL", "SEEK",
   "MOTHER", "FATHER", "SIN", "PRAY", "WATCH", "CLOSE", "BEHIND", "DOOR", "USHERS",
-  "SILENCE", "WEEP", "ROT", "BELOW", "UNDER", "EARTH", "STONE", "NAME", "FORGOT"
+  "SILENCE", "WEEP", "ROT", "BELOW", "UNDER", "EARTH", "STONE", "NAME", "FORGOT",
+  "LISTEN", "SPEAK", "TOUCH", "FEEL", "BURNING", "ICE", "EMPTY", "ALONE", "WITH YOU"
 ];
 
 interface SpiritWord {
   id: number;
   text: string;
   xOffset: number;
+  intensity: number;
 }
 
 type ViewMode = 'dashboard' | 'spectral' | 'visual' | 'rf';
@@ -379,33 +381,63 @@ export const GhostMeter: React.FC<GhostMeterProps> = ({ isOpen, onClose }) => {
      return () => cancelAnimationFrame(animationRef.current);
   }, [isOpen, calibrated, viewMode]);
 
-  // Word Generation
+  // Dynamic Word Generation Logic
   useEffect(() => {
     if (!isOpen || !calibrated || viewMode === 'visual') return;
     
-    // Check interval less frequently to let words linger, but not too slow
+    // Check interval more frequently for responsiveness (500ms)
     const interval = setInterval(() => {
-      // Access current sensors via ref to prevent stale closures or constant resets
       const currentSensors = sensorsRef.current;
-      const motionTotal = Math.abs(currentSensors.x) + Math.abs(currentSensors.y) + Math.abs(currentSensors.z);
-      const audioScore = currentSensors.audio; 
-      const thresholdScore = (motionTotal * 2) + (audioScore * 0.5); 
       
-      // Random chance increased slightly for effect
-      if (thresholdScore > 40 || Math.random() > 0.85) {
+      // Calculate Activity Metrics
+      // 1. Motion/EMF: Deviation from 1G (approx 9.8m/s^2) or just high raw movement
+      // Assuming device is roughly static, magnitude near 9.8.
+      const totalAccel = Math.sqrt(
+          Math.pow(currentSensors.x, 2) + 
+          Math.pow(currentSensors.y, 2) + 
+          Math.pow(currentSensors.z, 2)
+      );
+      const motionDelta = Math.abs(totalAccel - 9.8); // Deviation from gravity
+      const motionScore = Math.min(motionDelta / 5, 1); // Cap at 1 for moderate shaking
+
+      // 2. Audio: Volume level (0-255)
+      const audioScore = Math.min(currentSensors.audio / 100, 1); 
+
+      // 3. RF: Random spikes
+      const rfScore = currentSensors.rfNoise > 85 ? 1 : 0;
+
+      // Calculate Trigger Probability
+      // Base background rate is low (2%)
+      // Activity linearly adds to probability
+      let spawnProbability = 0.02; 
+      spawnProbability += (motionScore * 0.4); // Movement adds up to 40%
+      spawnProbability += (audioScore * 0.5);  // Noise adds up to 50%
+      spawnProbability += (rfScore * 0.3);     // RF spikes add 30%
+
+      // Hard trigger if really active or random chance
+      if (spawnProbability > 0.8 || Math.random() < spawnProbability) {
          const text = GHOST_WORDS[Math.floor(Math.random() * GHOST_WORDS.length)];
          
+         // Intensity Calculation (0.8 to 2.5 scale)
+         // Determines text size and jitter
+         const intensity = 0.8 + (motionScore) + (audioScore);
+
          const newWord: SpiritWord = {
-             id: Date.now() + Math.random(), // Ensure uniqueness
+             id: Date.now() + Math.random(), 
              text,
-             xOffset: (Math.random() - 0.5) * 100 // +/- 50px spread
+             xOffset: (Math.random() - 0.5) * 140, // Wider spread
+             intensity: Math.min(intensity, 2.5)
          };
 
-         setSpiritWords(prev => [newWord, ...prev].slice(0, 6)); // Keep only 6 words
+         setSpiritWords(prev => [newWord, ...prev].slice(0, 6)); 
          
-         if (navigator.vibrate) navigator.vibrate(200);
+         // Haptic Feedback based on intensity
+         if (navigator.vibrate) {
+             const vibeDuration = Math.floor(50 + (intensity * 100));
+             navigator.vibrate(vibeDuration);
+         }
       }
-    }, 2500);
+    }, 500); // Check every 500ms
     return () => clearInterval(interval);
   }, [isOpen, calibrated, viewMode]);
 
@@ -710,25 +742,31 @@ export const GhostMeter: React.FC<GhostMeterProps> = ({ isOpen, onClose }) => {
                         <div className="relative w-full h-full flex items-center justify-center">
                             {spiritWords.map((word, index) => {
                                 const isNew = index === 0;
-                                // Calculate style based on index to create drift effect
-                                // Index 0 is center. Higher indexes drift down and fade.
-                                const yOffset = index * 24; 
-                                const scale = Math.max(0.5, 1 - (index * 0.18));
-                                const opacity = Math.max(0, 1 - (index * 0.25));
-                                const blur = index * 1.5;
+                                // Drift Calculation
+                                const yOffset = index * 35; 
+                                // Scale based on intensity and age
+                                const scale = Math.max(0.5, (1 - (index * 0.15))) * (isNew ? 1 : 0.9);
+                                const opacity = Math.max(0, 1 - (index * 0.2));
+                                const blur = Math.max(0, (index * 2));
+                                
+                                // Dynamic font size based on intensity
+                                const fontSize = `${1.5 * (word.intensity || 1)}rem`;
+                                const color = word.intensity > 1.8 ? '#ef4444' : (word.intensity > 1.4 ? '#eab308' : '#71717a');
+                                const glow = word.intensity > 1.5 ? `0 0 ${10 * word.intensity}px ${color}` : 'none';
 
                                 return (
                                     <div 
                                         key={word.id}
-                                        className={`absolute text-center font-serif font-black tracking-widest transition-all duration-1000 ease-out flex items-center justify-center whitespace-nowrap ${isNew ? 'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] z-10' : 'text-zinc-500 z-0'}`}
+                                        className={`absolute text-center font-serif font-black tracking-widest transition-all duration-1000 ease-out flex items-center justify-center whitespace-nowrap z-10`}
                                         style={{
                                             top: `50%`,
                                             left: `50%`,
-                                            // Combine drift (Y), random scatter (X), and shrinking (scale)
                                             transform: `translate(calc(-50% + ${word.xOffset}px), calc(-50% + ${yOffset}px)) scale(${scale})`,
                                             opacity: opacity,
-                                            fontSize: isNew ? '2rem' : '1.5rem',
-                                            filter: `blur(${blur}px)`
+                                            fontSize: fontSize,
+                                            filter: `blur(${blur}px)`,
+                                            color: isNew ? '#ffffff' : color,
+                                            textShadow: isNew ? `0 0 20px rgba(255,255,255,0.8)` : glow
                                         }}
                                     >
                                         {word.text}

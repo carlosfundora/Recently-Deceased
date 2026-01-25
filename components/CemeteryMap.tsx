@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Cemetery } from '../types';
+import { Loader2 } from 'lucide-react';
+import { TbMapPin } from "react-icons/tb";
 
 interface CemeteryMapProps {
   cemeteries: Cemetery[];
@@ -10,12 +12,17 @@ interface CemeteryMapProps {
 export const CemeteryMap: React.FC<CemeteryMapProps> = ({ cemeteries, onSelectCemetery }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  const [locating, setLocating] = useState(false);
 
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
     // Initialize Map centered on New Orleans
-    mapInstance.current = L.map(mapContainer.current).setView([29.9511, -90.0715], 13);
+    mapInstance.current = L.map(mapContainer.current, {
+        scrollWheelZoom: false, // Prevent page scroll hijacking on desktop
+        touchZoom: true,        // Allow pinch zoom on mobile
+        dragging: true
+    }).setView([29.9511, -90.0715], 13);
 
     // Add Dark Mode Tiles (CartoDB Dark Matter)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -94,11 +101,52 @@ export const CemeteryMap: React.FC<CemeteryMapProps> = ({ cemeteries, onSelectCe
     });
   }, [cemeteries, onSelectCemetery]);
 
+  const handleLocate = () => {
+      if (!mapInstance.current) return;
+      setLocating(true);
+      
+      navigator.geolocation.getCurrentPosition(
+          (pos) => {
+              const { latitude, longitude } = pos.coords;
+              mapInstance.current?.flyTo([latitude, longitude], 15, { duration: 1.5 });
+              
+              // Add a "You Are Here" indicator
+              L.circleMarker([latitude, longitude], {
+                  radius: 8,
+                  fillColor: '#22c55e',
+                  color: '#ffffff',
+                  weight: 2,
+                  opacity: 1,
+                  fillOpacity: 0.8
+              }).addTo(mapInstance.current!)
+              .bindPopup("Your Location")
+              .openPopup();
+              
+              setLocating(false);
+          },
+          (err) => {
+              console.error(err);
+              setLocating(false);
+              alert("Unable to retrieve location. Please check permissions.");
+          }
+      );
+  };
+
   return (
-    <div className="w-full h-[600px] border border-zinc-800 relative group overflow-hidden bg-black" style={{ borderRadius: 'var(--card-radius)' }}>
+    <div className="w-full h-full relative group overflow-hidden bg-black z-0">
        <div ref={mapContainer} className="w-full h-full z-10 relative" />
+       
        {/* Overlay vignette */}
-       <div className="absolute inset-0 border-[1px] border-white/10 pointer-events-none z-20 shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]"></div>
+       <div className="absolute inset-0 border-b border-zinc-800 pointer-events-none z-20 shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]"></div>
+       
+       {/* GPS Button */}
+       <button 
+         onClick={handleLocate}
+         className="absolute bottom-6 right-6 z-[400] bg-black/80 hover:bg-green-900/80 text-zinc-400 hover:text-green-400 p-3 rounded-full border border-zinc-700 backdrop-blur-md transition-all shadow-lg active:scale-95 opacity-50 hover:opacity-100"
+         title="Locate Me"
+       >
+           {locating ? <Loader2 size={24} className="animate-spin" /> : <TbMapPin size={24} />}
+       </button>
     </div>
   );
 };
