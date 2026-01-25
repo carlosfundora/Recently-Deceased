@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Cemetery } from '../types';
 import { generateCemeteryHistory } from '../services/geminiService';
-import { MapPin, Check, BookOpen, Camera, Sparkles, Loader2, Trash2, Edit3, X, Calendar, Save } from 'lucide-react';
+import { MapPin, Check, BookOpen, Camera, Sparkles, Loader2, Trash2, Edit3, X, Calendar, Save, Image as ImageIcon, Plus } from 'lucide-react';
 
 interface CemeteryCardProps {
   cemetery: Cemetery;
@@ -13,6 +13,7 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [noteDraft, setNoteDraft] = useState(cemetery.userNotes);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const primaryFileInputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,7 +30,20 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
     setLoadingHistory(false);
   };
 
-  // Handle file upload
+  // Handle primary photo upload (inserts at start)
+  const handlePrimaryPhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        onUpdate(cemetery.id, { photos: [base64String, ...cemetery.photos] });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle gallery photo upload (appends to end)
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -143,6 +157,60 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
           </button>
         </div>
 
+        {/* Primary Photo Section */}
+        <div className="mb-[var(--space-sm)]">
+            <input
+               type="file"
+               ref={primaryFileInputRef}
+               className="hidden"
+               accept="image/*"
+               capture="environment"
+               onChange={handlePrimaryPhotoUpload}
+             />
+             
+             {cemetery.photos.length > 0 ? (
+                 <div className="w-full h-48 md:h-56 relative border border-zinc-800 rounded-sm overflow-hidden group/primary">
+                     <img 
+                       src={cemetery.photos[0]} 
+                       alt={cemetery.name} 
+                       className="w-full h-full object-cover grayscale opacity-80 group-hover/primary:opacity-100 group-hover/primary:grayscale-0 transition-all duration-700" 
+                     />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
+                     <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                        <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-700 px-2 py-1 text-[10px] uppercase font-bold text-zinc-300 tracking-widest flex items-center gap-2">
+                            <ImageIcon size={10} />
+                            Primary Evidence
+                        </div>
+                     </div>
+                     <button 
+                       onClick={() => removePhoto(0)}
+                       className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-red-900/80 text-white rounded-full opacity-0 group-hover/primary:opacity-100 transition-all"
+                       title="Remove Photo"
+                     >
+                       <Trash2 size={12} />
+                     </button>
+                 </div>
+             ) : (
+                 <div 
+                   onClick={() => primaryFileInputRef.current?.click()}
+                   className="w-full h-32 md:h-40 border border-zinc-800 border-dashed rounded-sm bg-zinc-900/10 hover:bg-zinc-900/30 cursor-pointer flex flex-col items-center justify-center gap-2 transition-all group/placeholder relative overflow-hidden"
+                 >
+                    {/* Animated Noise Background */}
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none"></div>
+                    
+                    <div className="w-10 h-10 rounded-full bg-zinc-800/50 flex items-center justify-center border border-zinc-700 group-hover/placeholder:border-zinc-500 group-hover/placeholder:scale-110 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] z-10">
+                        <Camera size={18} className="text-zinc-500 group-hover/placeholder:text-zinc-300" />
+                    </div>
+                    <div className="text-center z-10">
+                        <span className="block text-xs font-serif font-bold text-zinc-500 tracking-widest uppercase mb-0.5 group-hover/placeholder:text-zinc-300 transition-colors">Capture Spirit</span>
+                        <span className="flex items-center justify-center gap-1 text-[9px] text-zinc-600 font-mono group-hover/placeholder:text-zinc-500">
+                           <Plus size={8} /> Add Primary Photo
+                        </span>
+                    </div>
+                 </div>
+             )}
+        </div>
+
         {/* History Section */}
         <div className="mb-[var(--space-sm)] pb-[var(--space-sm)] border-b border-zinc-800">
           <div className="flex items-center justify-between mb-3">
@@ -216,7 +284,7 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
         <div>
           <div className="flex items-center justify-between mb-3">
              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-zinc-300 transition-colors">
-               <Camera size={12} /> Evidence
+               <Camera size={12} /> Gallery
              </h4>
              <button
                 onClick={() => fileInputRef.current?.click()}
@@ -246,12 +314,15 @@ export const CemeteryCard: React.FC<CemeteryCardProps> = ({ cemetery, onUpdate }
                       <Trash2 size={14} />
                     </button>
                   </div>
+                  {index === 0 && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-green-900/80 text-white text-[8px] uppercase font-bold text-center py-0.5">Primary</div>
+                  )}
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-[10px] text-zinc-500 italic text-center py-3 border border-zinc-900/50 bg-[#050505] opacity-60">
-              No evidence found.
+              No evidence collected.
             </div>
           )}
         </div>
