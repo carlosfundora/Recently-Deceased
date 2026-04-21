@@ -5,6 +5,10 @@ export const TELEMETRY_LIMIT = 16;
 export const state = {
   live: false,
   mode: 'dashboard',
+  profile: 'field',
+  preset: 'quiet-cemetery',
+  theme: 'sepulchral',
+  exportFormat: 'json',
   lowPower: false,
   diagnosticsCollapsed: false,
   hiddenPaused: false,
@@ -12,6 +16,7 @@ export const state = {
   raf: 0,
   wordTimer: 0,
   resizeObserver: null,
+  deferredInstallPrompt: null,
   audioCtx: null,
   analyser: null,
   data: null,
@@ -30,6 +35,18 @@ export const state = {
     ['System', 'Awaiting calibration'],
     ['Mobile', 'Standalone page ready'],
   ],
+  peaks: {
+    emf: 0,
+    audio: 0,
+    touch: 0,
+    rf: 0,
+    battery: null,
+  },
+  anomaly: {
+    score: 0,
+    locked: false,
+    label: 'Idle',
+  },
   status: {
     mic: 'idle',
     motion: 'idle',
