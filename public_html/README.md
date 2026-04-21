@@ -6,7 +6,13 @@ This directory contains a standalone mobile-first version of the ghost meter ext
 
 - `index.html` - standalone page shell
 - `styles.css` - mobile-first styling and layout
-- `app.js` - browser sensor logic, canvas rendering, and camera/audio handling
+- `app.js` - lightweight entrypoint and lifecycle orchestration
+- `modules/state.js` - shared runtime state and constants
+- `modules/dom.js` - DOM references and canvas helpers
+- `modules/ui.js` - UI rendering, badges, chips, and telemetry updates
+- `modules/render.js` - canvas drawing and simulated environmental updates
+- `modules/sensors.js` - browser sensor attachment, cleanup, and sampling
+- `modules/words.js` - spirit word generation and haptic trigger logic
 
 ## Deployment
 
@@ -17,6 +23,7 @@ Example layout:
 - `https://example.com/index.html`
 - `https://example.com/styles.css`
 - `https://example.com/app.js`
+- `https://example.com/modules/*.js`
 
 ## Notes
 
@@ -26,3 +33,5 @@ For best results on phones:
 - expect iPhone motion permissions to require a user tap
 - expect battery, vibration, and touch pressure support to vary by browser/device
 - the page is designed to degrade gracefully when a browser does not expose a given sensor API
+- low-power mode reduces some sampling frequency and spirit-word generation cadence
+- session export writes a JSON snapshot of telemetry, session events, and current sensor state
