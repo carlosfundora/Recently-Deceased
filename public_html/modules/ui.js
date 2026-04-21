@@ -1,4 +1,5 @@
 import { state, TELEMETRY_LIMIT } from './state.js';
+import { PRESETS } from './config.js';
 import { els } from './dom.js';
 
 export function recordEvent(type, detail) {
@@ -6,10 +7,17 @@ export function recordEvent(type, detail) {
   if (state.sessionEvents.length > 200) state.sessionEvents.shift();
 }
 
+export function renderTimeline() {
+  const items = state.sessionEvents.slice(-12).reverse();
+  els.timelineSummary.textContent = `${items.length} markers`;
+  els.timeline.innerHTML = items.map(item => `<li><span>${new Date(item.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span><strong>${item.type}</strong><em>${item.detail}</em></li>`).join('');
+}
+
 export function log(label, value) {
   state.telemetry = [[label, value], ...state.telemetry].slice(0, TELEMETRY_LIMIT);
   els.telemetry.innerHTML = state.telemetry.map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join('');
   recordEvent(label, value);
+  renderTimeline();
 }
 
 export function setBadge(text, live) {
@@ -45,6 +53,7 @@ export function updateModeButtons() {
     button.setAttribute('aria-selected', active ? 'true' : 'false');
   });
   els.modeLabel.textContent = `MODE: ${state.mode.toUpperCase()}`;
+  document.body.dataset.mode = state.mode;
 }
 
 export function updateCameraUI() {
@@ -52,6 +61,8 @@ export function updateCameraUI() {
   els.close.classList.toggle('hidden', !visual);
   els.video.classList.toggle('is-visible', visual && !!state.cameraStream);
   els.target.classList.toggle('hidden', !visual);
+  els.visualLockText.textContent = state.anomaly.locked ? 'LOCK' : visual ? 'SCAN' : 'IDLE';
+  els.target.classList.toggle('is-locked', state.anomaly.locked);
 }
 
 export function updatePowerButton() {
@@ -62,6 +73,19 @@ export function updatePowerButton() {
 export function updateDiagnosticsUI() {
   els.diagnostics.classList.toggle('is-collapsed', state.diagnosticsCollapsed);
   els.toggleTelemetry.textContent = state.diagnosticsCollapsed ? 'Show Diagnostics' : 'Hide Diagnostics';
+}
+
+export function updateSelections() {
+  if (els.profileSelect) els.profileSelect.value = state.profile;
+  if (els.presetSelect) els.presetSelect.value = state.preset;
+  if (els.exportFormatSelect) els.exportFormatSelect.value = state.exportFormat;
+  document.body.dataset.profile = state.profile;
+  document.body.dataset.preset = state.preset;
+  document.body.dataset.theme = PRESETS[state.preset]?.theme || state.theme;
+}
+
+export function updateInstallPromptVisibility() {
+  els.install.classList.toggle('hidden', !state.deferredInstallPrompt);
 }
 
 export function updateCanvasSize() {
@@ -85,6 +109,12 @@ export function renderReadings() {
   const battery = state.s.battery == null ? 0 : state.s.battery;
   const temp = ((state.s.temp - 10) / 30) * 100;
 
+  state.peaks.emf = Math.max(state.peaks.emf, emf);
+  state.peaks.audio = Math.max(state.peaks.audio, Math.round(audio));
+  state.peaks.touch = Math.max(state.peaks.touch, Math.round(touch));
+  state.peaks.rf = Math.max(state.peaks.rf, Math.round(state.s.rfAvg * 1.5));
+  state.peaks.battery = state.peaks.battery == null ? state.s.battery : Math.max(state.peaks.battery, state.s.battery || 0);
+
   els.emf.textContent = `${emf} mG`;
   els.audio.textContent = `${Math.round(audio)} dB`;
   els.touch.textContent = `${Math.round(touch)} %`;
@@ -97,6 +127,13 @@ export function renderReadings() {
   els.light.textContent = state.s.light == null ? 'N/A' : `${Math.round(state.s.light)}% (${state.s.lightDelta >= 0 ? '+' : ''}${state.s.lightDelta.toFixed(1)})`;
   els.camHud.textContent = state.s.light == null ? 'LIGHT: --' : `LIGHT: ${Math.round(state.s.light)}%`;
   els.drain.textContent = `Drain: ${state.s.drain.toFixed(2)}%/min`;
+  els.emfPeak.textContent = `Peak: ${state.peaks.emf} mG`;
+  els.audioPeak.textContent = `Peak: ${state.peaks.audio} dB`;
+  els.touchPeak.textContent = `Peak: ${state.peaks.touch} %`;
+  els.rfPeak.textContent = `Peak: ${state.peaks.rf} p/s`;
+  els.batteryPeak.textContent = state.peaks.battery == null ? 'Peak: N/A' : `Peak: ${Math.round(state.peaks.battery)}%`;
+  els.anomaly.textContent = state.anomaly.label;
+  els.anomalyMeta.textContent = `Composite score: ${Math.round(state.anomaly.score)}%`;
 
   updateBar(els.emfBar, emf);
   updateBar(els.audioBar, audio);
@@ -104,6 +141,8 @@ export function renderReadings() {
   updateBar(els.rfBar, rf);
   updateBar(els.batteryBar, battery);
   updateBar(els.tempBar, temp);
+  updateBar(els.anomalyBar, state.anomaly.score);
+  updateCameraUI();
 }
 
 export function renderWords() {
