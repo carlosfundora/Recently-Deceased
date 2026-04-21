@@ -5,6 +5,8 @@ on:
     paths:
       - 'public_html/**'
       - 'scripts/ci/check-public-html.mjs'
+      - 'tests/public-html.smoke.spec.ts'
+      - 'playwright.config.ts'
       - 'package.json'
       - '.github/workflows/public-html-smoke.yml'
   push:
@@ -12,6 +14,8 @@ on:
     paths:
       - 'public_html/**'
       - 'scripts/ci/check-public-html.mjs'
+      - 'tests/public-html.smoke.spec.ts'
+      - 'playwright.config.ts'
       - 'package.json'
       - '.github/workflows/public-html-smoke.yml'
   workflow_dispatch:
@@ -26,7 +30,7 @@ concurrency:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -36,6 +40,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
-      - name: Run standalone public_html smoke check
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run standalone public_html static smoke check
         run: npm run check:public-html
+
+      - name: Run standalone public_html browser smoke check
+        run: npm run test:public-html:browser
