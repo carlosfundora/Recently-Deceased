@@ -1,0 +1,41 @@
+name: public-html-smoke
+
+on:
+  pull_request:
+    paths:
+      - 'public_html/**'
+      - 'scripts/ci/check-public-html.mjs'
+      - 'package.json'
+      - '.github/workflows/public-html-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'public_html/**'
+      - 'scripts/ci/check-public-html.mjs'
+      - 'package.json'
+      - '.github/workflows/public-html-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: recently-deceased-public-html-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run standalone public_html smoke check
+        run: npm run check:public-html
