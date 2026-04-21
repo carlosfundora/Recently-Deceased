@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ghost-meter-static-v1';
+const CACHE_NAME = 'ghost-meter-static-v2';
 const ASSETS = [
   './index.html',
   './styles.css',
@@ -11,8 +11,7 @@ const ASSETS = [
   './modules/render.js',
   './modules/sensors.js',
   './modules/words.js',
-  './icons/icon-192.svg',
-  './icons/icon-512.svg'
+  './icons/icon-192.svg'
 ];
 
 self.addEventListener('install', event => {
