@@ -1,0 +1,23 @@
+body[data-mode='spectral'] {
+  --green: #79c7ff;
+  --green-strong: #d7eeff;
+  --yellow: #9c8cff;
+}
+
+body[data-mode='spectral'] .viewport-wrap {
+  background: radial-gradient(circle at center, rgba(105,199,255,0.12), rgba(2,4,10,0.95) 65%);
+}
+
+body[data-mode='spectral'] .crt-overlay {
+  opacity: 0.38;
+  mix-blend-mode: screen;
+}
+
+body[data-mode='spectral'] .panel,
+body[data-mode='spectral'] .telemetry-card {
+  border-color: rgba(121,199,255,0.18);
+}
+
+body[data-mode='spectral'] .mode-button[data-mode='spectral'] {
+  box-shadow: 0 0 0 1px rgba(121,199,255,0.16), 0 0 28px rgba(105,199,255,0.16);
+}
