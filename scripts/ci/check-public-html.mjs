@@ -8,10 +8,15 @@ const publicRoot = path.join(repoRoot, 'public_html');
 const requiredFiles = [
   'public_html/index.html',
   'public_html/styles.css',
+  'public_html/advanced.css',
   'public_html/app.js',
   'public_html/manifest.webmanifest',
   'public_html/service-worker.js',
   'public_html/icons/icon-192.svg',
+  'public_html/modes/dashboard.css',
+  'public_html/modes/spectral.css',
+  'public_html/modes/visual.css',
+  'public_html/modes/rf.css',
   'public_html/modules/state.js',
   'public_html/modules/config.js',
   'public_html/modules/dom.js',
@@ -87,8 +92,10 @@ function detectCycles(graph) {
 for (const relPath of requiredFiles) assertExists(relPath);
 
 const html = fs.readFileSync(path.join(publicRoot, 'index.html'), 'utf8');
-if (!html.includes('<link rel="stylesheet" href="./styles.css" />')) {
-  throw new Error('public_html/index.html is missing the standalone stylesheet reference.');
+for (const href of ['./styles.css', './advanced.css', './modes/dashboard.css', './modes/spectral.css', './modes/visual.css', './modes/rf.css']) {
+  if (!html.includes(`<link rel="stylesheet" href="${href}" />`)) {
+    throw new Error(`public_html/index.html is missing stylesheet reference: ${href}`);
+  }
 }
 if (!html.includes('<script src="./app.js" type="module"></script>')) {
   throw new Error('public_html/index.html is missing the standalone module entrypoint.');
