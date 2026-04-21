@@ -1,0 +1,21 @@
+body[data-mode='rf'] {
+  --green: #ff9a57;
+  --green-strong: #ffd0a6;
+  --yellow: #ff5fa1;
+}
+
+body[data-mode='rf'] .viewport-wrap {
+  background: radial-gradient(circle at center, rgba(255,95,161,0.12), rgba(7,2,8,0.96) 68%);
+}
+
+body[data-mode='rf'] .mode-button[data-mode='rf'] {
+  box-shadow: 0 0 0 1px rgba(255,95,161,0.14), 0 0 28px rgba(255,95,161,0.14);
+}
+
+body[data-mode='rf'] .anomaly-card {
+  border-color: rgba(255,154,87,0.22);
+}
+
+body[data-mode='rf'] .timeline-list li {
+  border-color: rgba(255,154,87,0.18);
+}
