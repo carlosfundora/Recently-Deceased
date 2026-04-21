@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check:public-html": "node scripts/ci/check-public-html.mjs"
+    "check:public-html": "node scripts/ci/check-public-html.mjs",
+    "test:public-html:browser": "playwright test tests/public-html.smoke.spec.ts"
   },
   "dependencies": {
     "@google/genai": "^1.37.0",
@@ -18,6 +19,7 @@
     "react-icons": "^5.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
