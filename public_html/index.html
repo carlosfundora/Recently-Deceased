@@ -7,8 +7,11 @@
     <title>Recently Deceased | Mobile Ghost Meter</title>
     <meta
       name="description"
-      content="Standalone mobile-friendly P.K.E. ghost meter webpage with camera, microphone, motion, RF-style spectrum, and changelog-aware spooky theatrics."
+      content="Standalone mobile-friendly P.K.E. ghost meter webpage with camera, microphone, motion, RF-style spectrum, and field-session export."
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -20,9 +23,10 @@
           <p class="eyebrow">Recently Deceased</p>
           <h1>P.K.E. Mobile Field Meter</h1>
         </div>
-        <button id="closeVisualBtn" class="icon-button" type="button" aria-label="Hide camera overlay">
-          ✕
-        </button>
+        <div class="topbar-actions">
+          <button id="settingsBtn" class="icon-button" type="button" aria-label="Toggle diagnostics panel">☰</button>
+          <button id="closeVisualBtn" class="icon-button hidden" type="button" aria-label="Hide camera overlay">✕</button>
+        </div>
       </header>
 
       <main class="meter-layout">
@@ -40,22 +44,36 @@
             <button id="recalibrateBtn" class="secondary-button" type="button">Recalibrate</button>
           </div>
 
-          <p id="permissionStatus" class="helper-text">
+          <div class="engage-row engage-row-secondary">
+            <button id="powerModeBtn" class="secondary-button" type="button">Low Power: Off</button>
+            <button id="exportBtn" class="secondary-button" type="button">Export Session</button>
+          </div>
+
+          <p id="permissionStatus" class="helper-text" aria-live="polite">
             Tap <strong>Engage System</strong> to request microphone, motion, optional camera, and location access.
           </p>
 
+          <div id="sensorChips" class="sensor-chip-grid" aria-label="Sensor status indicators">
+            <span class="sensor-chip sensor-chip-idle" data-sensor="mic">Mic: idle</span>
+            <span class="sensor-chip sensor-chip-idle" data-sensor="motion">Motion: idle</span>
+            <span class="sensor-chip sensor-chip-idle" data-sensor="camera">Camera: idle</span>
+            <span class="sensor-chip sensor-chip-idle" data-sensor="gps">GPS: idle</span>
+            <span class="sensor-chip sensor-chip-idle" data-sensor="battery">Battery: idle</span>
+            <span class="sensor-chip sensor-chip-idle" data-sensor="touch">Touch: proxy</span>
+          </div>
+
           <div class="mode-grid" role="tablist" aria-label="Ghost meter modes">
-            <button class="mode-button is-active" data-mode="dashboard" type="button">Dashboard</button>
-            <button class="mode-button" data-mode="spectral" type="button">Spectral</button>
-            <button class="mode-button" data-mode="visual" type="button">Visual</button>
-            <button class="mode-button" data-mode="rf" type="button">RF</button>
+            <button class="mode-button is-active" data-mode="dashboard" type="button" role="tab" aria-selected="true">Dashboard</button>
+            <button class="mode-button" data-mode="spectral" type="button" role="tab" aria-selected="false">Spectral</button>
+            <button class="mode-button" data-mode="visual" type="button" role="tab" aria-selected="false">Visual</button>
+            <button class="mode-button" data-mode="rf" type="button" role="tab" aria-selected="false">RF</button>
           </div>
         </section>
 
-        <section class="panel viewport-panel">
+        <section class="panel viewport-panel" id="viewportPanel">
           <div class="viewport-wrap">
             <video id="cameraFeed" class="camera-feed" autoplay muted playsinline></video>
-            <canvas id="meterCanvas" width="900" height="420" aria-label="Ghost meter live canvas"></canvas>
+            <canvas id="meterCanvas" aria-label="Ghost meter live canvas"></canvas>
             <div id="flashOverlay" class="flash-overlay"></div>
             <div class="viewport-hud viewport-hud-left">
               <span id="modeLabel">MODE: DASHBOARD</span>
@@ -86,6 +104,7 @@
               <p class="eyebrow">Live readings</p>
               <h2>Sensor fusion dashboard</h2>
             </div>
+            <button id="toggleTelemetryBtn" class="secondary-button compact-toggle" type="button">Hide Diagnostics</button>
           </div>
 
           <div class="reading-grid">
@@ -121,31 +140,33 @@
             </article>
           </div>
 
-          <div class="telemetry-grid">
-            <article class="telemetry-card">
-              <span class="telemetry-label">Orientation</span>
-              <strong id="orientationValue">0°</strong>
-            </article>
-            <article class="telemetry-card">
-              <span class="telemetry-label">GPS accuracy</span>
-              <strong id="gpsValue">N/A</strong>
-            </article>
-            <article class="telemetry-card">
-              <span class="telemetry-label">Humidity</span>
-              <strong id="humidityValue">--</strong>
-            </article>
-            <article class="telemetry-card">
-              <span class="telemetry-label">Light level</span>
-              <strong id="lightValue">--</strong>
-            </article>
-          </div>
-
-          <div class="telemetry-log-wrap">
-            <div class="telemetry-log-header">
-              <span>Telemetry log</span>
-              <span id="drainRateValue">Drain: --</span>
+          <div id="diagnosticsPanel" class="diagnostics-panel">
+            <div class="telemetry-grid">
+              <article class="telemetry-card">
+                <span class="telemetry-label">Orientation</span>
+                <strong id="orientationValue">0°</strong>
+              </article>
+              <article class="telemetry-card">
+                <span class="telemetry-label">GPS accuracy</span>
+                <strong id="gpsValue">N/A</strong>
+              </article>
+              <article class="telemetry-card">
+                <span class="telemetry-label">Humidity</span>
+                <strong id="humidityValue">--</strong>
+              </article>
+              <article class="telemetry-card">
+                <span class="telemetry-label">Light level</span>
+                <strong id="lightValue">--</strong>
+              </article>
             </div>
-            <ul id="telemetryLog" class="telemetry-log"></ul>
+
+            <div class="telemetry-log-wrap">
+              <div class="telemetry-log-header">
+                <span>Telemetry log</span>
+                <span id="drainRateValue">Drain: --</span>
+              </div>
+              <ul id="telemetryLog" class="telemetry-log"></ul>
+            </div>
           </div>
         </section>
       </main>
