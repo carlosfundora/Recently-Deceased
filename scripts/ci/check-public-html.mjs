@@ -9,7 +9,11 @@ const requiredFiles = [
   'public_html/index.html',
   'public_html/styles.css',
   'public_html/app.js',
+  'public_html/manifest.webmanifest',
+  'public_html/service-worker.js',
+  'public_html/icons/icon-192.svg',
   'public_html/modules/state.js',
+  'public_html/modules/config.js',
   'public_html/modules/dom.js',
   'public_html/modules/ui.js',
   'public_html/modules/render.js',
@@ -88,6 +92,21 @@ if (!html.includes('<link rel="stylesheet" href="./styles.css" />')) {
 }
 if (!html.includes('<script src="./app.js" type="module"></script>')) {
   throw new Error('public_html/index.html is missing the standalone module entrypoint.');
+}
+if (!html.includes('<link rel="manifest" href="./manifest.webmanifest" />')) {
+  throw new Error('public_html/index.html is missing the standalone manifest reference.');
+}
+
+const manifest = JSON.parse(fs.readFileSync(path.join(publicRoot, 'manifest.webmanifest'), 'utf8'));
+if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
+  throw new Error('public_html/manifest.webmanifest must include at least one icon.');
+}
+for (const icon of manifest.icons) {
+  if (!icon.src) throw new Error('Manifest icon is missing a src field.');
+  const iconPath = path.join(publicRoot, icon.src.replace(/^\.\//, ''));
+  if (!fs.existsSync(iconPath)) {
+    throw new Error(`Manifest icon does not exist: ${icon.src}`);
+  }
 }
 
 const jsFiles = collectJsFiles(publicRoot).sort();
