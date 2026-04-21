@@ -107,6 +107,7 @@ async function engage() {
   els.permission.innerHTML = 'Requesting permissions and calibrating mobile sensors...';
   setBadge('Calibrating', true);
   stopAll();
+  attachResizeObserver();
 
   const motionGranted = await requestMotionPermission();
   const audioGranted = await startAudio();
