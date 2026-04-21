@@ -4,17 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#05070a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Ghost Meter" />
     <title>Recently Deceased | Mobile Ghost Meter</title>
     <meta
       name="description"
-      content="Standalone mobile-friendly P.K.E. ghost meter webpage with camera, microphone, motion, RF-style spectrum, and field-session export."
+      content="Standalone mobile-friendly P.K.E. ghost meter webpage with camera, microphone, motion, RF-style spectrum, field-session export, and installable PWA support."
     />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icons/icon-512.svg" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
+  <body data-mode="dashboard" data-profile="field" data-preset="quiet-cemetery">
     <div class="fog fog-a"></div>
     <div class="fog fog-b"></div>
     <div class="app-shell">
@@ -24,6 +30,7 @@
           <h1>P.K.E. Mobile Field Meter</h1>
         </div>
         <div class="topbar-actions">
+          <button id="installBtn" class="icon-button hidden" type="button" aria-label="Install ghost meter app">⇩</button>
           <button id="settingsBtn" class="icon-button" type="button" aria-label="Toggle diagnostics panel">☰</button>
           <button id="closeVisualBtn" class="icon-button hidden" type="button" aria-label="Hide camera overlay">✕</button>
         </div>
@@ -49,9 +56,47 @@
             <button id="exportBtn" class="secondary-button" type="button">Export Session</button>
           </div>
 
+          <div class="control-grid">
+            <label class="control-card">
+              <span class="control-label">Profile</span>
+              <select id="profileSelect" class="control-select">
+                <option value="field">Field mode</option>
+                <option value="show">Show mode</option>
+              </select>
+            </label>
+            <label class="control-card">
+              <span class="control-label">Preset</span>
+              <select id="presetSelect" class="control-select">
+                <option value="quiet-cemetery">Quiet cemetery</option>
+                <option value="storm-interference">Storm interference</option>
+                <option value="haunted-house">Haunted house</option>
+                <option value="full-nonsense">Full nonsense mode</option>
+              </select>
+            </label>
+            <label class="control-card">
+              <span class="control-label">Export format</span>
+              <select id="exportFormatSelect" class="control-select">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+                <option value="txt">Text summary</option>
+              </select>
+            </label>
+          </div>
+
           <p id="permissionStatus" class="helper-text" aria-live="polite">
             Tap <strong>Engage System</strong> to request microphone, motion, optional camera, and location access.
           </p>
+
+          <details id="permissionDrawer" class="permission-drawer">
+            <summary>Sensor and permission guide</summary>
+            <div class="permission-copy">
+              <p><strong>Microphone</strong> powers EVP and waveform activity.</p>
+              <p><strong>Motion</strong> drives EMF-style readings and anomaly spikes.</p>
+              <p><strong>Camera</strong> is optional and only used in Visual mode for light analysis.</p>
+              <p><strong>Location</strong> improves the field log but is not required.</p>
+              <p><strong>Battery / vibration / touch pressure</strong> vary by browser and may fall back gracefully.</p>
+            </div>
+          </details>
 
           <div id="sensorChips" class="sensor-chip-grid" aria-label="Sensor status indicators">
             <span class="sensor-chip sensor-chip-idle" data-sensor="mic">Mic: idle</span>
@@ -75,13 +120,18 @@
             <video id="cameraFeed" class="camera-feed" autoplay muted playsinline></video>
             <canvas id="meterCanvas" aria-label="Ghost meter live canvas"></canvas>
             <div id="flashOverlay" class="flash-overlay"></div>
+            <div class="crt-overlay"></div>
             <div class="viewport-hud viewport-hud-left">
               <span id="modeLabel">MODE: DASHBOARD</span>
             </div>
             <div class="viewport-hud viewport-hud-right">
               <span id="cameraHud">LIGHT: --</span>
             </div>
-            <div id="visualTarget" class="visual-target hidden" aria-hidden="true"></div>
+            <div id="visualTarget" class="visual-target hidden" aria-hidden="true">
+              <div class="visual-target-ring"></div>
+              <div class="visual-target-core"></div>
+              <div id="visualLockText" class="visual-target-text">SCAN</div>
+            </div>
           </div>
         </section>
 
@@ -112,31 +162,37 @@
               <span class="reading-label">EMF / Motion</span>
               <strong id="emfValue" class="reading-value">0 mG</strong>
               <div class="meter-bar"><span id="emfBar"></span></div>
+              <small id="emfPeak" class="peak-readout">Peak: 0 mG</small>
             </article>
             <article class="reading-card">
               <span class="reading-label">EVP / Audio</span>
               <strong id="audioValue" class="reading-value">0 dB</strong>
               <div class="meter-bar"><span id="audioBar"></span></div>
+              <small id="audioPeak" class="peak-readout">Peak: 0 dB</small>
             </article>
             <article class="reading-card">
               <span class="reading-label">Capacitance</span>
               <strong id="touchValue" class="reading-value">0 %</strong>
               <div class="meter-bar"><span id="touchBar"></span></div>
+              <small id="touchPeak" class="peak-readout">Peak: 0 %</small>
             </article>
             <article class="reading-card">
               <span class="reading-label">RF Density</span>
               <strong id="rfValue" class="reading-value">0 p/s</strong>
               <div class="meter-bar"><span id="rfBar"></span></div>
+              <small id="rfPeak" class="peak-readout">Peak: 0 p/s</small>
             </article>
             <article class="reading-card">
               <span class="reading-label">Battery / Drain</span>
               <strong id="batteryValue" class="reading-value">N/A</strong>
               <div class="meter-bar"><span id="batteryBar"></span></div>
+              <small id="batteryPeak" class="peak-readout">Peak: N/A</small>
             </article>
-            <article class="reading-card">
-              <span class="reading-label">Temp / Pressure</span>
-              <strong id="tempValue" class="reading-value">--</strong>
-              <div class="meter-bar"><span id="tempBar"></span></div>
+            <article class="reading-card anomaly-card">
+              <span class="reading-label">Anomaly Lock</span>
+              <strong id="anomalyValue" class="reading-value">Idle</strong>
+              <div class="meter-bar"><span id="anomalyBar"></span></div>
+              <small id="anomalyMeta" class="peak-readout">Composite score: 0%</small>
             </article>
           </div>
 
@@ -158,6 +214,14 @@
                 <span class="telemetry-label">Light level</span>
                 <strong id="lightValue">--</strong>
               </article>
+            </div>
+
+            <div class="timeline-panel">
+              <div class="telemetry-log-header">
+                <span>Investigation timeline</span>
+                <span id="timelineSummary">0 markers</span>
+              </div>
+              <ol id="timelineList" class="timeline-list"></ol>
             </div>
 
             <div class="telemetry-log-wrap">
