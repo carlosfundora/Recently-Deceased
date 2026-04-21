@@ -1,0 +1,18 @@
+body[data-mode='dashboard'] .viewport-wrap {
+  background: radial-gradient(circle at center, rgba(79,255,160,0.08), rgba(2,4,6,0.96) 70%);
+}
+
+body[data-mode='dashboard'] .viewport-hud,
+body[data-mode='dashboard'] .status-live {
+  color: #9cffc8;
+  border-color: rgba(122,255,183,0.28);
+}
+
+body[data-mode='dashboard'] .mode-button[data-mode='dashboard'],
+body[data-mode='dashboard'] .reading-card:first-child {
+  box-shadow: 0 0 0 1px rgba(119,255,176,0.14), 0 0 28px rgba(63,218,139,0.12);
+}
+
+body[data-mode='dashboard'] .crt-overlay {
+  opacity: 0.22;
+}
