@@ -1,0 +1,25 @@
+body[data-mode='visual'] .camera-feed.is-visible {
+  opacity: 0.78;
+  filter: grayscale(0.45) contrast(1.24) brightness(0.84) sepia(0.3) hue-rotate(-12deg);
+}
+
+body[data-mode='visual'] .viewport-wrap {
+  background: radial-gradient(circle at center, rgba(255,214,122,0.08), rgba(2,4,6,0.98) 70%);
+}
+
+body[data-mode='visual'] .visual-target {
+  filter: drop-shadow(0 0 18px rgba(122,255,183,0.28));
+}
+
+body[data-mode='visual'] .visual-target.is-locked .visual-target-ring {
+  animation: visualLockPulse 1.1s ease-in-out infinite alternate;
+}
+
+body[data-mode='visual'] .mode-button[data-mode='visual'] {
+  box-shadow: 0 0 0 1px rgba(255,212,92,0.16), 0 0 28px rgba(255,212,92,0.14);
+}
+
+@keyframes visualLockPulse {
+  from { transform: scale(0.98); }
+  to { transform: scale(1.03); }
+}
