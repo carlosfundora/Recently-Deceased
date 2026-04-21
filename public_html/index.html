@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#05070a" />
+    <title>Recently Deceased | Mobile Ghost Meter</title>
+    <meta
+      name="description"
+      content="Standalone mobile-friendly P.K.E. ghost meter webpage with camera, microphone, motion, RF-style spectrum, and changelog-aware spooky theatrics."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="fog fog-a"></div>
+    <div class="fog fog-b"></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Recently Deceased</p>
+          <h1>P.K.E. Mobile Field Meter</h1>
+        </div>
+        <button id="closeVisualBtn" class="icon-button" type="button" aria-label="Hide camera overlay">
+          ✕
+        </button>
+      </header>
+
+      <main class="meter-layout">
+        <section class="panel hero-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Standalone sensor console</p>
+              <h2>Field-ready mobile refactor</h2>
+            </div>
+            <span id="systemBadge" class="status-badge status-idle">Idle</span>
+          </div>
+
+          <div class="engage-row">
+            <button id="engageBtn" class="primary-button" type="button">Engage System</button>
+            <button id="recalibrateBtn" class="secondary-button" type="button">Recalibrate</button>
+          </div>
+
+          <p id="permissionStatus" class="helper-text">
+            Tap <strong>Engage System</strong> to request microphone, motion, optional camera, and location access.
+          </p>
+
+          <div class="mode-grid" role="tablist" aria-label="Ghost meter modes">
+            <button class="mode-button is-active" data-mode="dashboard" type="button">Dashboard</button>
+            <button class="mode-button" data-mode="spectral" type="button">Spectral</button>
+            <button class="mode-button" data-mode="visual" type="button">Visual</button>
+            <button class="mode-button" data-mode="rf" type="button">RF</button>
+          </div>
+        </section>
+
+        <section class="panel viewport-panel">
+          <div class="viewport-wrap">
+            <video id="cameraFeed" class="camera-feed" autoplay muted playsinline></video>
+            <canvas id="meterCanvas" width="900" height="420" aria-label="Ghost meter live canvas"></canvas>
+            <div id="flashOverlay" class="flash-overlay"></div>
+            <div class="viewport-hud viewport-hud-left">
+              <span id="modeLabel">MODE: DASHBOARD</span>
+            </div>
+            <div class="viewport-hud viewport-hud-right">
+              <span id="cameraHud">LIGHT: --</span>
+            </div>
+            <div id="visualTarget" class="visual-target hidden" aria-hidden="true"></div>
+          </div>
+        </section>
+
+        <section class="panel spirit-panel">
+          <div class="panel-header compact">
+            <div>
+              <p class="eyebrow">Spirit box</p>
+              <h2>Apparition text stream</h2>
+            </div>
+            <button id="snapBtn" class="secondary-button" type="button">Flash Snapshot</button>
+          </div>
+          <div id="spiritBox" class="spirit-box">
+            <div class="spirit-empty">...listening to the ether...</div>
+          </div>
+        </section>
+
+        <section class="panel readings-panel">
+          <div class="panel-header compact">
+            <div>
+              <p class="eyebrow">Live readings</p>
+              <h2>Sensor fusion dashboard</h2>
+            </div>
+          </div>
+
+          <div class="reading-grid">
+            <article class="reading-card">
+              <span class="reading-label">EMF / Motion</span>
+              <strong id="emfValue" class="reading-value">0 mG</strong>
+              <div class="meter-bar"><span id="emfBar"></span></div>
+            </article>
+            <article class="reading-card">
+              <span class="reading-label">EVP / Audio</span>
+              <strong id="audioValue" class="reading-value">0 dB</strong>
+              <div class="meter-bar"><span id="audioBar"></span></div>
+            </article>
+            <article class="reading-card">
+              <span class="reading-label">Capacitance</span>
+              <strong id="touchValue" class="reading-value">0 %</strong>
+              <div class="meter-bar"><span id="touchBar"></span></div>
+            </article>
+            <article class="reading-card">
+              <span class="reading-label">RF Density</span>
+              <strong id="rfValue" class="reading-value">0 p/s</strong>
+              <div class="meter-bar"><span id="rfBar"></span></div>
+            </article>
+            <article class="reading-card">
+              <span class="reading-label">Battery / Drain</span>
+              <strong id="batteryValue" class="reading-value">N/A</strong>
+              <div class="meter-bar"><span id="batteryBar"></span></div>
+            </article>
+            <article class="reading-card">
+              <span class="reading-label">Temp / Pressure</span>
+              <strong id="tempValue" class="reading-value">--</strong>
+              <div class="meter-bar"><span id="tempBar"></span></div>
+            </article>
+          </div>
+
+          <div class="telemetry-grid">
+            <article class="telemetry-card">
+              <span class="telemetry-label">Orientation</span>
+              <strong id="orientationValue">0°</strong>
+            </article>
+            <article class="telemetry-card">
+              <span class="telemetry-label">GPS accuracy</span>
+              <strong id="gpsValue">N/A</strong>
+            </article>
+            <article class="telemetry-card">
+              <span class="telemetry-label">Humidity</span>
+              <strong id="humidityValue">--</strong>
+            </article>
+            <article class="telemetry-card">
+              <span class="telemetry-label">Light level</span>
+              <strong id="lightValue">--</strong>
+            </article>
+          </div>
+
+          <div class="telemetry-log-wrap">
+            <div class="telemetry-log-header">
+              <span>Telemetry log</span>
+              <span id="drainRateValue">Drain: --</span>
+            </div>
+            <ul id="telemetryLog" class="telemetry-log"></ul>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
